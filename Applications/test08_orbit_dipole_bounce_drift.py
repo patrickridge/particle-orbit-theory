@@ -1,0 +1,164 @@
+import numpy as np
+import matplotlib.pyplot as plt
+import seaborn as sns
+from mpl_toolkits.mplot3d import Axes3D  # noqa: F401
+
+from orbit_ivp_core import simulate_orbit_ivp
+from fields import E_zero, B_dipole_cartesian
+
+sns.set_theme(style="ticks", context="paper")
+
+# =============================================================
+# Test 8: Full particle orbit in a dipole field
+#
+# Shows: bounce motion, v_∥ reversal, energy and μ conservation.
+# Expected: regular z(t) bounce; slow x-y drift; |ΔE/E| and |Δμ/μ| < 1%.
+# =============================================================
+
+q = 1.0
+m = 1.0
+M = 5.0      # dipole strength
+
+E_func = E_zero
+B_func = B_dipole_cartesian(M=M)
+
+dt     = 0.001
+T      = 20.0
+nsteps = int(T / dt)
+
+# Start at equatorial plane (z=0) on x-axis — per meeting notes:
+# "equatorial plane first so z=0, if on x axis v_perp in y direction"
+r0     = np.array([3.0, 0.0, 0.0])
+B0_vec = B_func(r0, 0.0)          # = (0, 0, -M/r_eq^3)  => b_hat = (0,0,-1)
+bhat   = B0_vec / np.linalg.norm(B0_vec)
+
+v_mag     = 1.0
+pitch_deg = 60.0
+pitch     = np.deg2rad(pitch_deg)
+
+# b_hat = (0,0,-1) at this point, so perp directions are x and y.
+# Choose v_perp in y direction: eperp = (0,1,0)
+# => v0 = (0, v_perp, -v_par)
+eperp = np.array([0.0, 1.0, 0.0])
+
+v0     = v_mag * (np.cos(pitch) * bhat + np.sin(pitch) * eperp)
+state0 = np.concatenate((r0, v0))
+
+# ---- Integrate -------------------------------------------------------
+t, traj = simulate_orbit_ivp(state0=state0, dt=dt, nsteps=nsteps,
+                              q=q, m=m,
+                              E_func=E_func, B_func=B_func)
+
+r = traj[:, :3]
+v = traj[:, 3:]
+
+# ---- Diagnostics at every time step ---------------------------------
+vpar  = np.zeros_like(t)
+vperp = np.zeros_like(t)
+Bmag  = np.zeros_like(t)
+mu    = np.zeros_like(t)     # magnetic moment  μ = m v_perp^2 / (2 B)
+
+for i in range(len(t)):
+    Bi       = B_func(r[i], t[i])
+    Bmag[i]  = np.linalg.norm(Bi)
+    bh       = Bi / Bmag[i]
+    vpar[i]  = np.dot(v[i], bh)
+    vperp[i] = np.sqrt(max(np.dot(v[i], v[i]) - vpar[i]**2, 0.0))
+    mu[i]    = 0.5 * m * vperp[i]**2 / Bmag[i]
+
+# Kinetic energy and relative drift
+K         = 0.5 * m * np.sum(v**2, axis=1)
+rel_drift = (K - K[0]) / K[0]
+
+# ---- Bounce-period measurement from v_∥ zero-crossings ---------------
+sign_changes = np.where(np.diff(np.sign(vpar)))[0]
+if len(sign_changes) >= 2:
+    # Each pair of crossings is half a bounce period
+    half_periods = np.diff(t[sign_changes])
+    full_periods = half_periods[::2] + half_periods[1::2] if len(half_periods) > 1 else half_periods * 2
+    tau_b_num    = np.mean(full_periods) if len(full_periods) > 0 else np.nan
+    print(f"Mirror points (v_∥=0) detected at t = {t[sign_changes]}")
+    print(f"Measured bounce period: {tau_b_num:.4f}  (time units)")
+else:
+    tau_b_num = np.nan
+    print("Not enough mirror points detected — extend T or adjust pitch angle.")
+
+# ======================================================================
+# Plot 1: z(t) — shows bounce oscillation
+# ======================================================================
+fig, ax = plt.subplots(figsize=(8, 4))
+ax.plot(t, r[:, 2], lw=1.2)
+if len(sign_changes) >= 1:
+    ax.scatter(t[sign_changes], r[sign_changes, 2],
+               s=25, zorder=4, label="mirror points")
+ax.set_xlabel("t"); ax.set_ylabel("z")
+ax.set_title("Test 8: Dipole orbit — z(t) shows bounce/mirroring")
+ax.legend(frameon=True)
+sns.despine()
+plt.tight_layout()
+plt.savefig("Figures/test08_dipole_z_vs_t.png", dpi=300)
+plt.show()
+
+# ======================================================================
+# Plot 2: v_∥(t) — reverses sign at mirror points
+# ======================================================================
+fig, ax = plt.subplots(figsize=(8, 4))
+ax.plot(t, vpar, lw=1.2)
+ax.axhline(0.0, color="k", ls="--", lw=0.8)
+ax.set_xlabel("t"); ax.set_ylabel(r"$v_\parallel$")
+ax.set_title(r"Test 8: $v_\parallel$ reverses sign at mirror points")
+sns.despine()
+plt.tight_layout()
+plt.savefig("Figures/test08_dipole_vpar_vs_t.png", dpi=300)
+plt.show()
+
+# ======================================================================
+# Plot 3: Magnetic moment μ(t) — should be approximately conserved
+# ======================================================================
+mu_rel = (mu - mu[0]) / mu[0]
+
+fig, axes = plt.subplots(2, 1, figsize=(8, 5), sharex=True,
+                          gridspec_kw={"height_ratios": [3, 2]})
+
+axes[0].plot(t, mu, lw=1.1)
+axes[0].set_ylabel(r"$\mu = mv_\perp^2 / 2B$")
+axes[0].set_title(r"Test 8: Magnetic moment $\mu$ (adiabatic invariant)")
+
+axes[1].plot(t, np.abs(mu_rel), lw=1.0, color="C1")
+axes[1].axhline(0.01, color="k", ls="--", lw=0.7, label="1% level")
+axes[1].set_yscale("log")
+axes[1].set_xlabel("t")
+axes[1].set_ylabel(r"$|(\mu - \mu_0)/\mu_0|$")
+axes[1].legend(frameon=True, fontsize=8)
+
+sns.despine()
+plt.tight_layout()
+plt.savefig("Figures/test08_dipole_mu_conservation.png", dpi=300)
+plt.show()
+
+# ======================================================================
+# Plot 4: Energy conservation
+# ======================================================================
+fig, ax = plt.subplots(figsize=(8, 3))
+ax.plot(t, np.abs(rel_drift), lw=1.0)
+ax.axhline(1e-6, color="k", ls="--", lw=0.7, label=r"$10^{-6}$ threshold")
+ax.set_yscale("log")
+ax.set_xlabel("t"); ax.set_ylabel(r"$|(K - K_0)/K_0|$")
+ax.set_title("Test 8: Kinetic energy conservation (E = 0)")
+ax.legend(frameon=True, fontsize=8)
+sns.despine()
+plt.tight_layout()
+plt.savefig("Figures/test08_dipole_energy_drift.png", dpi=300)
+plt.show()
+
+# ======================================================================
+# Plot 5: 3D orbit
+# ======================================================================
+fig = plt.figure(figsize=(7, 6))
+ax  = fig.add_subplot(111, projection="3d")
+ax.plot(r[:, 0], r[:, 1], r[:, 2], lw=0.8)
+ax.set_xlabel("x"); ax.set_ylabel("y"); ax.set_zlabel("z")
+ax.set_title("Test 8: Full orbit in dipole field (3D)")
+plt.tight_layout()
+plt.savefig("Figures/test08_dipole_orbit_3D.png", dpi=300)
+plt.show()

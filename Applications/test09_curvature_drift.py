@@ -1,0 +1,106 @@
+import numpy as np
+import matplotlib.pyplot as plt
+import seaborn as sns
+
+from orbit_ivp_core import simulate_orbit_ivp, q, m
+from fields import E_zero, B_curved_z
+
+sns.set_theme(style="ticks", context="paper")
+
+# =============================================================
+# Test 9: Curvature drift
+#
+# Particles moving along curved field lines drift sideways due to the
+# centrifugal-like curvature force.  v_curv ≈ (m v_∥^2) / (q B0 R_c).
+# Expected: guiding centre drifts in +y; measured speed matches analytic formula.
+# =============================================================
+
+B0  = 1.0
+R_c = 20.0    # large radius of curvature keeps the approximation valid
+
+E_func = E_zero
+B_func = B_curved_z(B0=B0, R_c=R_c)
+
+dt     = 0.01
+T      = 100.0
+nsteps = int(T / dt)
+
+# Initial condition: mostly parallel  → curvature drift dominates
+r0     = np.array([0.0, 0.0, 0.0])
+v_par0 = 1.0
+v_perp0 = 0.15                          # small perp so grad-B drift is tiny
+v0     = np.array([0.0, 0.0, v_par0])   # parallel to B (z-direction near origin)
+# Add tiny perp component for gyration (needed to keep particle on field lines)
+v0[0]  = v_perp0
+state0 = np.concatenate((r0, v0))
+
+t, traj = simulate_orbit_ivp(state0, dt, nsteps,
+                              q=q, m=m,
+                              E_func=E_func, B_func=B_func)
+
+x, y = traj[:, 0], traj[:, 1]
+
+# ---- Gyro-averaging --------------------------------------------------
+Omega0 = q * B0 / m
+Tgyro  = 2.0 * np.pi / Omega0
+W      = max(5, int(Tgyro / dt))
+kernel = np.ones(W) / W
+
+y_gc = np.convolve(y, kernel, mode="same")
+x_gc = np.convolve(x, kernel, mode="same")
+
+# ---- Analytic predictions -------------------------------------------
+v_curv_theory  = (m * v_par0**2) / (q * B0 * R_c)    # y-component
+v_gradB_theory = (m * v_perp0**2) / (2.0 * q * B0 * R_c)  # same direction, smaller
+
+# Numerical estimate
+cut         = W
+v_drift_num = np.polyfit(t[cut:-cut], y_gc[cut:-cut], 1)[0]
+
+print(f"Analytic curvature drift speed    (y): {v_curv_theory:.6e}")
+print(f"Analytic grad-B    drift speed    (y): {v_gradB_theory:.6e}  (for reference)")
+print(f"Total analytic drift              (y): {v_curv_theory + v_gradB_theory:.6e}")
+print(f"Numerical drift speed             (y): {v_drift_num:.6e}")
+print(f"Relative error vs curvature+gradB: "
+      f"{abs(v_drift_num - (v_curv_theory + v_gradB_theory)) / (v_curv_theory + v_gradB_theory) * 100:.2f}%")
+
+# ---- Analytic y(t) trajectory ----------------------------------------
+y_theory = (v_curv_theory + v_gradB_theory) * t
+
+# ======================================================================
+# Plot 1: x-y guiding-centre path
+# ======================================================================
+fig, ax = plt.subplots(figsize=(6, 5))
+ax.plot(x_gc, y_gc, lw=1.4, label="Guiding centre (gyro-avg)")
+ax.set_xlabel("x (gyro-avg)")
+ax.set_ylabel("y (gyro-avg)")
+ax.set_title("Test 9: Curvature drift — guiding-centre path")
+ax.legend(frameon=True)
+sns.despine()
+plt.tight_layout()
+plt.savefig("Figures/test09_curvature_gc_xy.png", dpi=300)
+plt.show()
+
+# ======================================================================
+# Plot 2: y(t) with analytic overlay and residual
+# ======================================================================
+fig, axes = plt.subplots(2, 1, figsize=(8, 6), sharex=True,
+                          gridspec_kw={"height_ratios": [3, 1]})
+
+axes[0].plot(t, y,    alpha=0.2, lw=0.6, color="C0", label="y(t) raw")
+axes[0].plot(t, y_gc, lw=1.3,   color="C0", label="y(t) gyro-avg")
+axes[0].plot(t, y_theory, "k--", lw=1.1,
+             label=fr"Theory: $v_{{curv}}+v_{{\nabla B}} = {v_curv_theory + v_gradB_theory:.4f}$")
+axes[0].set_ylabel("y")
+axes[0].set_title("Test 9: Curvature drift — numerical vs analytic")
+axes[0].legend(frameon=True, fontsize=8)
+
+axes[1].plot(t, y_gc - y_theory, lw=1.0, color="C1")
+axes[1].axhline(0, color="k", lw=0.6, ls="--")
+axes[1].set_xlabel("t")
+axes[1].set_ylabel("residual")
+
+sns.despine()
+plt.tight_layout()
+plt.savefig("Figures/test09_curvature_y_vs_t.png", dpi=300)
+plt.show()
