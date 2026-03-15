@@ -146,30 +146,39 @@ def B_curved_z(B0=1.0, R_c=10.0):
 # B fields — magnetic dipole (Cartesian, static)
 # -------------------------------------------------------------
 
-def B_dipole_cartesian(M=1.0, eps=1e-12):
+def B_dipole_cartesian(M=1.0, tilt_deg=0.0, eps=1e-12):
     """
-    Magnetic dipole field with dipole moment along +z-hat:
+    Magnetic dipole field with dipole moment M tilted by tilt_deg from +z in the x-z plane.
 
+    General formula (moment m = M*(sin θ, 0, cos θ), θ = tilt_deg in radians):
+
+        B(r) = (1 / r^5) * [ 3(m·r) r  −  r² m ]
+
+    At tilt_deg=0 this reduces to the aligned case:
         B(r) = (M / r^5) * [3zx,  3zy,  3z^2 - r^2]
 
     This satisfies ∇·B = 0 and ∇×B = 0 everywhere except the origin.
     The eps guard prevents division by zero near r = 0.
 
-    On-axis (x = y = 0):  |B| = 2M / z^3   (see dipole_B_magnitude_on_axis)
+    Planetary reference tilts (magnetic axis vs rotation axis):
+        Earth:   ~11°   Neptune: ~47°   Uranus: ~59°
     """
-    M = float(M)
-    eps = float(eps)
+    M     = float(M)
+    eps   = float(eps)
+    theta = float(tilt_deg) * np.pi / 180.0
+    mx    = M * np.sin(theta)   # dipole moment x-component
+    mz    = M * np.cos(theta)   # dipole moment z-component
 
     def _B(r, t):
         x, y, z = float(r[0]), float(r[1]), float(r[2])
         r2 = x*x + y*y + z*z
         r2 = max(r2, eps)
-        r1 = np.sqrt(r2)
-        r5 = r1 ** 5
+        r5 = r2 ** 2.5
 
-        Bx = M * (3.0 * x * z) / r5
-        By = M * (3.0 * y * z) / r5
-        Bz = M * (3.0 * z * z - r2) / r5
+        m_dot_r = mx * x + mz * z   # m·r  (my=0, so no y term)
+        Bx = (3.0 * m_dot_r * x - r2 * mx) / r5
+        By = (3.0 * m_dot_r * y             ) / r5   # my = 0
+        Bz = (3.0 * m_dot_r * z - r2 * mz) / r5
         return np.array([Bx, By, Bz])
 
     return _B

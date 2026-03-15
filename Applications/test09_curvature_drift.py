@@ -16,13 +16,14 @@ sns.set_theme(style="ticks", context="paper")
 # =============================================================
 
 B0  = 1.0
-R_c = 20.0    # large radius of curvature keeps the approximation valid
+R_c = 10000.0  # must be >> v_par*T so particle stays in linear-approx valid region
+               # With R_c=10000: z/R_c ~ 0.1 and x_GC/R_c ~ 5e-5 after T=1000 ✓
 
 E_func = E_zero
 B_func = B_curved_z(B0=B0, R_c=R_c)
 
 dt     = 0.01
-T      = 100.0
+T      = 1000.0   # long run so drift accumulates: Δy = v_curv*T = T/R_c = 0.1
 nsteps = int(T / dt)
 
 # Initial condition: mostly parallel  → curvature drift dominates
@@ -62,10 +63,11 @@ print(f"Analytic grad-B    drift speed    (y): {v_gradB_theory:.6e}  (for refere
 print(f"Total analytic drift              (y): {v_curv_theory + v_gradB_theory:.6e}")
 print(f"Numerical drift speed             (y): {v_drift_num:.6e}")
 print(f"Relative error vs curvature+gradB: "
-      f"{abs(v_drift_num - (v_curv_theory + v_gradB_theory)) / (v_curv_theory + v_gradB_theory) * 100:.2f}%")
+      f"{abs(abs(v_drift_num) - (v_curv_theory + v_gradB_theory)) / (v_curv_theory + v_gradB_theory) * 100:.2f}%")
 
 # ---- Analytic y(t) trajectory ----------------------------------------
-y_theory = (v_curv_theory + v_gradB_theory) * t
+# Drift is in -y; anchor theory line to initial gyro-avg y so overlay is meaningful
+y_theory = y_gc[cut] - (v_curv_theory + v_gradB_theory) * (t - t[cut])
 
 # ======================================================================
 # Plot 1: x-y guiding-centre path

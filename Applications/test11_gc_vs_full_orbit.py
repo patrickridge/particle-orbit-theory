@@ -14,14 +14,16 @@ sns.set_theme(style="ticks", context="paper")
 # Test 11: Full Lorentz orbit vs Guiding-Centre approximation in dipole field
 #
 # Runs both integrators from the same starting point and overlays results.
-# Uses M=50 (strong dipole) so the adiabatic condition holds (r_gyro << r_eq).
+# Uses M=500 (strong dipole) so the adiabatic condition holds (r_gyro/r_eq ~ 0.006, T_b/T_g ~ 100).
 # Expected: GC trajectory matches the orbit average; separation stays ~r_gyro.
 # =============================================================
 
 # ---- Parameters -------------------------------------------------------
 q   = 1.0
 m   = 1.0
-M   = 50.0      # strong dipole -> high Omega -> small gyroradius -> adiabatic
+M   = 500.0     # strong dipole -> high Omega -> small gyroradius -> adiabatic
+                # M=500 gives T_bounce/T_gyro ~ 100 and r_gyro/r_eq ~ 0.006 (well adiabatic)
+                # M=50 only gives T_bounce/T_gyro ~ 10 which is too marginal (93% mu drift)
 
 B_func = B_dipole_cartesian(M=M)
 E_func = E_zero

@@ -17,14 +17,10 @@ sns.set_theme(style="ticks", context="paper")
 
 q = 1.0
 m = 1.0
-M = 5.0      # dipole strength
+M = 50.0     # dipole strength — M=50 gives T_b/T_g ~ 7 (visible gyration) and r_gyro/r_eq ~ 0.16
 
 E_func = E_zero
 B_func = B_dipole_cartesian(M=M)
-
-dt     = 0.001
-T      = 20.0
-nsteps = int(T / dt)
 
 # Start at equatorial plane (z=0) on x-axis — per meeting notes:
 # "equatorial plane first so z=0, if on x axis v_perp in y direction"
@@ -43,6 +39,20 @@ eperp = np.array([0.0, 1.0, 0.0])
 
 v0     = v_mag * (np.cos(pitch) * bhat + np.sin(pitch) * eperp)
 state0 = np.concatenate((r0, v0))
+
+# ---- Time setup: run for 4 bounce periods ----------------------------
+v_par_mag = v_mag * np.cos(pitch)
+T_b_est   = 4.0 * r0[0] / v_par_mag   # rough bounce period estimate
+T         = 4.0 * T_b_est
+dt        = 0.001
+nsteps    = int(T / dt)
+
+Omega   = abs(q) * np.linalg.norm(B0_vec) / m
+T_gyro  = 2.0 * np.pi / Omega
+r_gyro  = v_mag * np.sin(pitch) / Omega
+print(f"M={M}, T_gyro={T_gyro:.3f}, T_b_est={T_b_est:.2f}")
+print(f"r_gyro/r_eq={r_gyro/r0[0]:.3f}, T_b/T_g={T_b_est/T_gyro:.1f}")
+print(f"T_run={T:.1f}, nsteps={nsteps}")
 
 # ---- Integrate -------------------------------------------------------
 t, traj = simulate_orbit_ivp(state0=state0, dt=dt, nsteps=nsteps,

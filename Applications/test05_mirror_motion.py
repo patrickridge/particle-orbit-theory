@@ -76,7 +76,7 @@ sns.despine()
 plt.tight_layout()
 plt.savefig("Figures/test05_mirror_z_turning.png", dpi=300)
 plt.show()
-'''
+
 # --- Plot 2: energy conservation ---
 fig, ax = plt.subplots(figsize=(8, 3))
 ax.plot(t, abs_rel_drift, lw=1.0)
@@ -88,4 +88,3 @@ sns.despine()
 plt.tight_layout()
 plt.savefig("Figures/test05_mirror_energy_drift.png", dpi=300)
 plt.show()
-'''

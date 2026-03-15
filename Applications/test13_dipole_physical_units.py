@@ -1,3 +1,4 @@
+import time
 import numpy as np
 import matplotlib.pyplot as plt
 import seaborn as sns
@@ -136,6 +137,7 @@ print(f"nsteps:           {nsteps}")
 
 # ---- Integrate full Lorentz orbit -------------------------------------
 print("\nIntegrating full orbit ...")
+t_start = time.perf_counter()
 state0 = np.concatenate([r0, v0])
 t, traj = simulate_orbit_ivp(
     state0=state0, dt=dt, nsteps=nsteps,
@@ -145,6 +147,7 @@ t, traj = simulate_orbit_ivp(
 r_traj = traj[:, :3]
 v_traj = traj[:, 3:]
 print("  done.")
+print(f"  Integration took {time.perf_counter() - t_start:.2f} s")
 
 # ---- Diagnostics: v_par, mu, kinetic energy ---------------------------
 print("Computing diagnostics ...")
