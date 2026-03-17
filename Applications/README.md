@@ -110,3 +110,31 @@ Draws the magnetic field lines for several L-shells in the meridional (x-z) plan
 The physical application. Simulates a 10 keV electron starting at L = 3 in Earth's dipole field using real SI units (metres, Tesla, kg). Computes the gyroperiod, gyroradius, and bounce period in seconds. Compares the numerically detected mirror points to the analytic mirror latitude. Checks that the adiabatic condition holds.
 
 **Key result:** Particle bounces at ±z_mirror matching the analytic prediction. `μ` conserved to < 1% over 4 bounce periods (~7 seconds of real time).
+
+---
+
+## test14 — Tilted dipole (planetary application)
+
+Extends the dipole field to include a tilt between the magnetic and rotation axes — as seen on Neptune (47°) and Uranus (59°). A particle starting at the geographic equator (z = 0) is displaced from the magnetic equatorial plane, producing asymmetric bounce motion that differs from the aligned case.
+
+Two runs: a long run for all three tilts (0°, 47°, 59°) to compare z(t), and a short 4-bounce run for the 3D guiding-centre orbit figure.
+
+**Key result:** Bounce amplitude and midpoint shift with tilt; the asymmetry grows with tilt angle. 3D GC orbit shows the particle tracing a tilted drift shell.
+
+---
+
+## test15 — Corotation E×B drift (aligned rotating dipole)
+
+Adds the corotation electric field E = −(Ω×r)×B to an aligned dipole. This is the inertial-frame electric field induced when the planet (and its magnetosphere) rotates at angular rate Ω. The resulting E×B drift equals Ω×r exactly — the guiding centre co-rotates with the field line.
+
+**Key result:** GC traces a circle of radius ≈ 3 in the x-y plane over one corotation period. Angular rate measured from φ(t) agrees with Ω to < 1%. Bounce motion in z persists simultaneously.
+
+---
+
+## test16 — Rotating tilted dipole (full planetary magnetosphere)
+
+The full simulation combining test14 and test15: a Neptune-like tilted dipole (47°) whose moment rotates about z at Ω = 0.02, plus the corotation electric field E = −(Ω×r)×B(r,t). B is now time-varying. The integrator evaluates B at each timestep automatically.
+
+The particle simultaneously gyrates, bounces in the asymmetric tilted geometry, and co-rotates azimuthally — all three adiabatic motions present at once.
+
+**Key result:** GC co-rotates at rate ≈ Ω; z(t) shows bounce modulated by the rotating asymmetric field; 3D orbit shows the tilted drift shell sweeping around the rotation axis.

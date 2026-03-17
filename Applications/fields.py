@@ -34,6 +34,25 @@ def E_const(vec):
     return _E
 
 
+def E_corotation(B_func, Omega):
+    """
+    Corotation electric field: E = -(Omega x r) x B
+
+    For a planet rotating at rate Omega about z, field lines are dragged
+    around at velocity v_rot = Omega x r = (-Omega*y, Omega*x, 0).
+    This induces E = -v_rot x B in the inertial frame.
+    The resulting E x B drift equals v_rot exactly — the guiding centre
+    co-rotates with the field line to lowest order.
+
+    Valid for an aligned static dipole (B does not change with time).
+    """
+    def _E(r, t):
+        B    = B_func(r, t)
+        vrot = np.array([-Omega * r[1], Omega * r[0], 0.0])
+        return -np.cross(vrot, B)
+    return _E
+
+
 # -------------------------------------------------------------
 # B fields — uniform / simple
 # -------------------------------------------------------------
@@ -181,6 +200,43 @@ def B_dipole_cartesian(M=1.0, tilt_deg=0.0, eps=1e-12):
         Bz = (3.0 * m_dot_r * z - r2 * mz) / r5
         return np.array([Bx, By, Bz])
 
+    return _B
+
+
+def B_dipole_rotating(M=1.0, tilt_deg=0.0, Omega=0.0, eps=1e-12):
+    """
+    Rotating tilted dipole: magnetic moment rotates about z at angular rate Omega.
+        m(t) = M * (sin θ cos(Ωt),  sin θ sin(Ωt),  cos θ)
+
+    Special cases:
+      tilt_deg=0           → m along z, static  (same as B_dipole_cartesian, Omega irrelevant)
+      Omega=0              → static tilted dipole (same as B_dipole_cartesian(tilt_deg))
+      tilt_deg≠0, Omega≠0 → full time-varying rotating dipole
+
+    Usage:
+        B_func = B_dipole_rotating(M=500, tilt_deg=47, Omega=0.02)
+        E_func = E_corotation(B_func, Omega=0.02)   # E = -(Omega x r) x B(r,t)
+    """
+    M   = float(M)
+    eps = float(eps)
+    theta = float(tilt_deg) * np.pi / 180.0
+    st, ct = np.sin(theta), np.cos(theta)
+
+    def _B(r, t):
+        t  = float(t)
+        mx = M * st * np.cos(Omega * t)
+        my = M * st * np.sin(Omega * t)
+        mz = M * ct
+
+        x, y, z = float(r[0]), float(r[1]), float(r[2])
+        r2 = max(x*x + y*y + z*z, eps)
+        r5 = r2 ** 2.5
+        m_dot_r = mx*x + my*y + mz*z
+        return np.array([
+            (3.0*m_dot_r*x - r2*mx) / r5,
+            (3.0*m_dot_r*y - r2*my) / r5,
+            (3.0*m_dot_r*z - r2*mz) / r5,
+        ])
     return _B
 
 
