@@ -3,7 +3,7 @@ import matplotlib.pyplot as plt
 import seaborn as sns
 from mpl_toolkits.mplot3d import Axes3D  # noqa: F401
 
-from orbit_ivp_core import simulate_orbit_ivp
+from orbit_ivp_core import simulate_orbit_ivp, extract_gc
 from fields import E_zero, B_dipole_cartesian
 
 sns.set_theme(style="ticks", context="paper")
@@ -85,7 +85,8 @@ sign_changes = np.where(np.diff(np.sign(vpar)))[0]
 if len(sign_changes) >= 2:
     # Each pair of crossings is half a bounce period
     half_periods = np.diff(t[sign_changes])
-    full_periods = half_periods[::2] + half_periods[1::2] if len(half_periods) > 1 else half_periods * 2
+    n_pairs      = min(len(half_periods[::2]), len(half_periods[1::2]))
+    full_periods = half_periods[:2*n_pairs:2] + half_periods[1:2*n_pairs:2] if n_pairs > 0 else half_periods * 2
     tau_b_num    = np.mean(full_periods) if len(full_periods) > 0 else np.nan
     print(f"Mirror points (v_∥=0) detected at t = {t[sign_changes]}")
     print(f"Measured bounce period: {tau_b_num:.4f}  (time units)")
@@ -93,20 +94,27 @@ else:
     tau_b_num = np.nan
     print("Not enough mirror points detected — extend T or adjust pitch angle.")
 
+# ---- Extract guiding centre ------------------------------------------
+r_gc_extracted = extract_gc(traj, t, B_func, q=q, m=m)
+
 # ======================================================================
-# Plot 1: z(t) — shows bounce oscillation
+# Plot 1: z(t) — shows bounce oscillation, full orbit + GC
 # ======================================================================
 fig, ax = plt.subplots(figsize=(8, 4))
-ax.plot(t, r[:, 2], lw=1.2)
+ax.plot(t, r[:, 2], lw=0.6, alpha=0.4, color="C0", label="Full orbit")
+ax.plot(t, r_gc_extracted[:, 2], lw=1.4, color="C1", label="Guiding centre")
 if len(sign_changes) >= 1:
-    ax.scatter(t[sign_changes], r[sign_changes, 2],
-               s=25, zorder=4, label="mirror points")
+    ax.scatter(t[sign_changes], r_gc_extracted[sign_changes, 2],
+               s=25, zorder=4, color="C2", label="Mirror points")
 ax.set_xlabel("t"); ax.set_ylabel("z")
-ax.set_title("Test 8: Dipole orbit — z(t) shows bounce/mirroring")
+ax.set_title(
+    fr"Test 8: z(t) — bounce motion  [$\alpha$={pitch_deg}°, M={M}, "
+    fr"$r_g/r_{{eq}}$={r_gyro/r0[0]:.3f}, $T_b/T_g$={T_b_est/T_gyro:.0f}]"
+)
 ax.legend(frameon=True)
 sns.despine()
 plt.tight_layout()
-plt.savefig("Figures/test08_dipole_z_vs_t.png", dpi=300)
+plt.savefig("../Figures/test08_dipole_z_vs_t.png", dpi=300)
 plt.show()
 
 # ======================================================================
@@ -119,7 +127,7 @@ ax.set_xlabel("t"); ax.set_ylabel(r"$v_\parallel$")
 ax.set_title(r"Test 8: $v_\parallel$ reverses sign at mirror points")
 sns.despine()
 plt.tight_layout()
-plt.savefig("Figures/test08_dipole_vpar_vs_t.png", dpi=300)
+plt.savefig("../Figures/test08_dipole_vpar_vs_t.png", dpi=300)
 plt.show()
 
 # ======================================================================
@@ -143,7 +151,7 @@ axes[1].legend(frameon=True, fontsize=8)
 
 sns.despine()
 plt.tight_layout()
-plt.savefig("Figures/test08_dipole_mu_conservation.png", dpi=300)
+plt.savefig("../Figures/test08_dipole_mu_conservation.png", dpi=300)
 plt.show()
 
 # ======================================================================
@@ -158,17 +166,26 @@ ax.set_title("Test 8: Kinetic energy conservation (E = 0)")
 ax.legend(frameon=True, fontsize=8)
 sns.despine()
 plt.tight_layout()
-plt.savefig("Figures/test08_dipole_energy_drift.png", dpi=300)
+plt.savefig("../Figures/test08_dipole_energy_drift.png", dpi=300)
 plt.show()
 
 # ======================================================================
-# Plot 5: 3D orbit
+# Plot 5: 3D orbit — show first 1.5 bounce periods for clarity
+# (full run is 4 bounce periods but the 3D tube becomes very dense)
 # ======================================================================
+n3d = int(1.5 * T_b_est / dt)   # 1.5 bounce periods
+
 fig = plt.figure(figsize=(7, 6))
 ax  = fig.add_subplot(111, projection="3d")
-ax.plot(r[:, 0], r[:, 1], r[:, 2], lw=0.8)
+ax.plot(r[:n3d, 0], r[:n3d, 1], r[:n3d, 2],
+        lw=0.4, alpha=0.3, color="C0", label="Full orbit")
+ax.plot(r_gc_extracted[:n3d, 0], r_gc_extracted[:n3d, 1], r_gc_extracted[:n3d, 2],
+        lw=1.4, color="C1", label="Guiding centre")
 ax.set_xlabel("x"); ax.set_ylabel("y"); ax.set_zlabel("z")
-ax.set_title("Test 8: Full orbit in dipole field (3D)")
+ax.set_title(f"Test 8: Orbit in dipole (3D, first 1.5 bounce periods)\n"
+             fr"M={M}, $r_g/r_{{eq}}$={r_gyro/r0[0]:.3f}")
+ax.view_init(elev=20, azim=-60)
+ax.legend(fontsize=8)
 plt.tight_layout()
-plt.savefig("Figures/test08_dipole_orbit_3D.png", dpi=300)
+plt.savefig("../Figures/test08_dipole_orbit_3D.png", dpi=300)
 plt.show()

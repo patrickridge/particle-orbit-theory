@@ -5,7 +5,7 @@ from mpl_toolkits.mplot3d import Axes3D   # noqa: F401
 from matplotlib.colors import Normalize
 from matplotlib import cm
 
-from orbit_ivp_core import simulate_orbit_ivp
+from orbit_ivp_core import simulate_orbit_ivp, extract_gc
 from fields import B_dipole_rotating, E_corotation
 
 sns.set_theme(style="ticks", context="paper")
@@ -80,12 +80,10 @@ t, traj = simulate_orbit_ivp(
 )
 print("done.")
 
-# Guiding-centre trajectory (one point per gyration)
-x_gc = traj[::skip, 0]
-y_gc = traj[::skip, 1]
-z_gc = traj[::skip, 2]
+# Extract GC analytically then decimate for plotting
+gc   = extract_gc(traj, t, B_func, q=q, m=m)
+x_gc = gc[::skip, 0];  y_gc = gc[::skip, 1];  z_gc = gc[::skip, 2];  t_gc = t[::skip]
 r_gc = np.sqrt(x_gc**2 + y_gc**2)
-t_gc = t[::skip]
 
 # Measure mean azimuthal drift rate from linear fit to unwrapped phi(t).
 # Note: for an aligned dipole v_ExB = Omega x r exactly (v_rot · B = 0).
@@ -122,7 +120,7 @@ fig1.colorbar(sm, ax=ax1, pad=0.08, shrink=0.55, label="t (code units)")
 # Planet sphere
 u_s = np.linspace(0, 2 * np.pi, 24)
 v_s = np.linspace(0, np.pi, 16)
-r_p = 0.35
+r_p = 1.0
 ax1.plot_surface(
     r_p * np.outer(np.cos(u_s), np.sin(v_s)),
     r_p * np.outer(np.sin(u_s), np.sin(v_s)),
@@ -197,7 +195,7 @@ ax_top.set_ylabel("φ (rad)")
 ax_top.set_title(
     f"Test 16: Azimuthal drift — rotating tilted dipole "
     f"({tilt_deg:.0f}°, Ω={Omega})\n"
-    f"Note: E×B drift < Ω for tilted field (v_rot · B ≠ 0)"
+    f"Total drift > Ω: E×B co-rotation + gradient/curvature drift combined"
 )
 ax_top.legend(fontsize=9)
 
@@ -217,16 +215,13 @@ print("Saved test16_rotating_dipole_phi_vs_t.png")
 # ======================================================================
 fig4, ax4 = plt.subplots(figsize=(6, 6))
 
-ax4.plot(traj[:, 0], traj[:, 1],
-         lw=0.3, color="steelblue", alpha=0.2, label="Full orbit")
-
 for i in range(len(x_gc) - 1):
     c = cmap_used(norm(0.5 * (t_gc[i] + t_gc[i + 1])))
     ax4.plot(x_gc[i:i+2], y_gc[i:i+2], color=c, lw=1.6)
 
 theta_c = np.linspace(0, 2 * np.pi, 500)
-ax4.plot(r0[0] * np.cos(theta_c), r0[0] * np.sin(theta_c),
-         "k--", lw=1.0, label=f"Expected co-rotation (r={r0[0]})")
+ax4.plot(L0 * np.cos(theta_c), L0 * np.sin(theta_c),
+         "k--", lw=1.0, label=f"L = {L0:.0f} reference circle")
 
 theta_p = np.linspace(0, 2 * np.pi, 200)
 ax4.fill(np.cos(theta_p), np.sin(theta_p), color="lightgray", zorder=5)

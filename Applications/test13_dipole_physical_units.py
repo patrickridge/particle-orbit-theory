@@ -4,7 +4,7 @@ import matplotlib.pyplot as plt
 import seaborn as sns
 from scipy.optimize import brentq
 
-from orbit_ivp_core import simulate_orbit_ivp
+from orbit_ivp_core import simulate_orbit_ivp, extract_gc
 from fields import E_zero, B_dipole_cartesian
 
 sns.set_theme(style="ticks", context="paper")
@@ -142,7 +142,10 @@ state0 = np.concatenate([r0, v0])
 t, traj = simulate_orbit_ivp(
     state0=state0, dt=dt, nsteps=nsteps,
     q=q, m=m_e, E_func=E_func, B_func=B_func,
-    rtol=1e-10, atol=1.0        # atol=1 m; suitable for SI (|r| ~ 1e7 m)
+    rtol=1e-9,
+    atol=np.array([1e4, 1e4, 1e4, 1e4, 1e4, 1e4]),
+    # pos atol=10 km (invisible at Re scale); vel atol=10 km/s (0.02% of v)
+    # Using scalar atol=1 forced ~400 ns steps; vector atol gives ~2 µs steps (~10x faster)
 )
 r_traj = traj[:, :3]
 v_traj = traj[:, 3:]
@@ -182,10 +185,13 @@ print(f"Max |ΔKE/KE|: {np.max(np.abs(KE_rel)):.2e}")
 # ======================================================================
 # Plot 1: z(t) in Re — bounce motion with analytic mirror latitude
 # ======================================================================
+r_gc13 = extract_gc(np.column_stack([r_traj, v_traj]), t, B_func, q=-q_e, m=m_e)
+
 fig, ax = plt.subplots(figsize=(9, 4))
-ax.plot(t, r_traj[:, 2] / Re, lw=0.8, color="C0", label="Full orbit  z(t)")
+ax.plot(t, r_traj[:, 2] / Re,  lw=0.5, alpha=0.35, color="C0", label="Full orbit  z(t)")
+ax.plot(t, r_gc13[:, 2] / Re,  lw=1.4, color="C1", label="Guiding centre z(t)")
 if len(sign_ch) > 0:
-    ax.scatter(mirror_t, mirror_z / Re, s=20, color="C1", zorder=5,
+    ax.scatter(mirror_t, r_gc13[sign_ch, 2] / Re, s=20, color="C2", zorder=5,
                label="Mirror points (numerical)")
 ax.axhline(+z_mirror / Re, color="k", ls="--", lw=1.0,
            label=(fr"Analytic $\lambda_m={lam_m_deg:.1f}°$  "
@@ -201,7 +207,7 @@ ax.set_title(
 ax.legend(frameon=True, fontsize=8)
 sns.despine()
 plt.tight_layout()
-plt.savefig("Figures/test13_SI_z_vs_t.png", dpi=300)
+plt.savefig("../Figures/test13_SI_z_vs_t.png", dpi=300)
 plt.show()
 
 # ======================================================================
@@ -224,7 +230,7 @@ ax.set_title(
 ax.legend(frameon=True, fontsize=8)
 sns.despine()
 plt.tight_layout()
-plt.savefig("Figures/test13_SI_vpar_vs_t.png", dpi=300)
+plt.savefig("../Figures/test13_SI_vpar_vs_t.png", dpi=300)
 plt.show()
 
 # ======================================================================
@@ -243,5 +249,5 @@ ax.set_title(
 ax.legend(frameon=True, fontsize=8)
 sns.despine()
 plt.tight_layout()
-plt.savefig("Figures/test13_SI_mu_error.png", dpi=300)
+plt.savefig("../Figures/test13_SI_mu_error.png", dpi=300)
 plt.show()

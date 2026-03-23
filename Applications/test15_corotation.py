@@ -4,7 +4,7 @@ import seaborn as sns
 from matplotlib.colors import Normalize
 from matplotlib import cm
 
-from orbit_ivp_core import simulate_orbit_ivp
+from orbit_ivp_core import simulate_orbit_ivp, extract_gc
 from fields import E_zero, E_corotation, B_dipole_cartesian
 
 sns.set_theme(style="ticks", context="paper")
@@ -68,16 +68,13 @@ t_noE, traj_noE = simulate_orbit_ivp(
 )
 print("done.")
 
-# Guiding-centre trajectory (one point per gyration)
-x_gc = traj[::skip, 0]
-y_gc = traj[::skip, 1]
-z_gc = traj[::skip, 2]
-t_gc = t[::skip]
+# Guiding-centre positions extracted analytically
+gc     = extract_gc(traj,    t,    B_func, q=q, m=m)
+gc_noE = extract_gc(traj_noE, t_noE, B_func, q=q, m=m)
 
-# GC for no-E run
-x_gc_noE = traj_noE[::skip, 0]
-y_gc_noE = traj_noE[::skip, 1]
-t_gc_noE = t_noE[::skip]
+# Decimate for plotting (one point per gyration keeps plots readable)
+x_gc = gc[::skip, 0];    y_gc = gc[::skip, 1];    z_gc = gc[::skip, 2];    t_gc = t[::skip]
+x_gc_noE = gc_noE[::skip, 0];  y_gc_noE = gc_noE[::skip, 1];  t_gc_noE = t_noE[::skip]
 
 # Measure actual co-rotation rate from linear fit to phi(t)
 phi_gc     = np.unwrap(np.arctan2(y_gc, x_gc))
@@ -100,9 +97,6 @@ cmap_used = cm.plasma
 # ======================================================================
 fig1, ax1 = plt.subplots(figsize=(6, 6))
 
-ax1.plot(traj[:, 0], traj[:, 1],
-         lw=0.3, color="steelblue", alpha=0.25, label="Full orbit")
-
 for i in range(len(x_gc) - 1):
     c = cmap_used(norm(0.5 * (t_gc[i] + t_gc[i + 1])))
     ax1.plot(x_gc[i:i+2], y_gc[i:i+2], color=c, lw=1.6)
@@ -123,7 +117,10 @@ ax1.set_aspect("equal")
 ax1.set_xlabel("x (code units)")
 ax1.set_ylabel("y (code units)")
 ax1.set_title(f"Test 15: Co-rotation — top-down view (Ω={Omega})")
-ax1.legend(fontsize=8)
+ax1.legend(fontsize=8, handles=[
+    plt.Line2D([0],[0], color="gray", lw=1.5, label="GC trajectory (coloured by time)"),
+    plt.Line2D([0],[0], color="k", lw=1.0, ls="--", label=f"Expected co-rotation (r={r0[0]:.1f})")
+])
 sns.despine()
 plt.tight_layout()
 plt.savefig("../Figures/test15_corotation_xy.png", dpi=300)

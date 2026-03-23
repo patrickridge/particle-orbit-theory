@@ -4,7 +4,7 @@ import seaborn as sns
 from mpl_toolkits.mplot3d import Axes3D  # noqa: F401
 from scipy.interpolate import interp1d
 
-from orbit_ivp_core import simulate_orbit_ivp
+from orbit_ivp_core import simulate_orbit_ivp, extract_gc
 from guiding_centre import simulate_gc_orbit
 from fields import E_zero, B_dipole_cartesian
 
@@ -95,6 +95,11 @@ r_full = traj_full[:, :3]
 v_full = traj_full[:, 3:]
 print("  done.")
 
+# Extract GC analytically from full orbit (removes Larmor radius exactly)
+print("Extracting guiding centre from full orbit ...")
+r_gc_extracted = extract_gc(traj_full, t_full, B_func, q=q, m=m)
+print("  done.")
+
 # ---- Guiding-centre orbit ---------------------------------------------
 # GC starts at the same position as the particle.
 # (Gyroradius offset is a higher-order correction discussed in the report.)
@@ -136,6 +141,8 @@ r_gc_interp  = np.column_stack([gc_x(t_full), gc_y(t_full), gc_z(t_full)])
 vp_gc_interp = gc_vp(t_full)
 
 sep = np.linalg.norm(r_full - r_gc_interp, axis=1)
+# Separation between extracted GC and GC-equations — true approximation error
+sep_gc = np.linalg.norm(r_gc_extracted - r_gc_interp, axis=1)
 
 # ---- Summary ----------------------------------------------------------
 print(f"\n--- Summary ---")
@@ -149,17 +156,18 @@ print(f"Max |Delta K / K0|             = {np.max(np.abs(K_rel)):.2e}")
 # Plot 1: z(t) — bounce motion, full orbit vs GC
 # ======================================================================
 fig, ax = plt.subplots(figsize=(9, 4))
-ax.plot(t_full, r_full[:, 2], lw=0.6, alpha=0.7, color="C0", label="Full orbit")
-ax.plot(t_gc,   r_gc[:, 2],   lw=1.8, ls="--",  color="C1", label="Guiding centre")
+ax.plot(t_full, r_full[:, 2],          lw=0.5, alpha=0.35, color="C0", label="Full orbit")
+ax.plot(t_full, r_gc_extracted[:, 2],  lw=1.2, color="C2", label="GC extracted from orbit")
+ax.plot(t_gc,   r_gc[:, 2],            lw=1.8, ls="--", color="C1", label="GC equations")
 ax.axhline(0.0, color="k", lw=0.4, ls=":")
 ax.set_xlabel("t (code units)")
 ax.set_ylabel("z")
-ax.set_title(f"Test 11: z(t) — Full orbit vs GC   "
+ax.set_title(f"Test 11: z(t) — Full orbit, extracted GC, and GC equations\n"
              fr"[$\alpha$={pitch_deg}°, M={M}, $r_g/r_{{eq}}$={r_gyro/r_eq:.3f}]")
-ax.legend(frameon=True)
+ax.legend(frameon=True, fontsize=8)
 sns.despine()
 plt.tight_layout()
-plt.savefig("Figures/test11_gc_vs_full_z.png", dpi=300)
+plt.savefig("../Figures/test11_gc_vs_full_z.png", dpi=300)
 plt.show()
 
 # ======================================================================
@@ -177,7 +185,7 @@ ax.legend(frameon=True)
 ax.set_aspect("equal")
 sns.despine()
 plt.tight_layout()
-plt.savefig("Figures/test11_gc_vs_full_xy.png", dpi=300)
+plt.savefig("../Figures/test11_gc_vs_full_xy.png", dpi=300)
 plt.show()
 
 # ======================================================================
@@ -185,16 +193,20 @@ plt.show()
 # Should oscillate near the gyroradius — not grow secularly
 # ======================================================================
 fig, ax = plt.subplots(figsize=(9, 3))
-ax.plot(t_full, sep, lw=0.8, color="C2")
+ax.plot(t_full, sep,    lw=0.8, color="C0", alpha=0.7,
+        label=r"$|\mathbf{r}_{full} - \mathbf{r}_{GC\,eqs}|$ (includes Larmor radius)")
+ax.plot(t_full, sep_gc, lw=1.0, color="C1",
+        label=r"$|\mathbf{r}_{GC\,extracted} - \mathbf{r}_{GC\,eqs}|$ (true approx. error)")
 ax.axhline(r_gyro, color="k", ls="--", lw=0.9,
            label=fr"Gyroradius $r_g = {r_gyro:.3f}$")
 ax.set_xlabel("t (code units)")
-ax.set_ylabel(r"$|\mathbf{r}_{full} - \mathbf{r}_{GC}|$")
-ax.set_title("Test 11: Full orbit – GC separation  (expect ~$r_g$ if adiabatic)")
-ax.legend(frameon=True)
+ax.set_ylabel("separation")
+ax.set_title("Test 11: Separation — orbit vs GC equations\n"
+             "Orange = true GC approximation error (excludes Larmor radius)")
+ax.legend(frameon=True, fontsize=8)
 sns.despine()
 plt.tight_layout()
-plt.savefig("Figures/test11_separation.png", dpi=300)
+plt.savefig("../Figures/test11_separation.png", dpi=300)
 plt.show()
 
 # ======================================================================
@@ -212,7 +224,7 @@ ax.set_title(r"Test 11: $v_\parallel$ — Full orbit vs GC")
 ax.legend(frameon=True)
 sns.despine()
 plt.tight_layout()
-plt.savefig("Figures/test11_vpar_comparison.png", dpi=300)
+plt.savefig("../Figures/test11_vpar_comparison.png", dpi=300)
 plt.show()
 
 # ======================================================================
@@ -228,5 +240,5 @@ ax.set_title(r"Test 11: Adiabatic invariant $\mu$ conservation (full orbit)")
 ax.legend(frameon=True, fontsize=8)
 sns.despine()
 plt.tight_layout()
-plt.savefig("Figures/test11_mu_conservation.png", dpi=300)
+plt.savefig("../Figures/test11_mu_conservation.png", dpi=300)
 plt.show()

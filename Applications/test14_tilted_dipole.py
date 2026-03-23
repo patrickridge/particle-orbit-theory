@@ -5,30 +5,8 @@ from mpl_toolkits.mplot3d import Axes3D   # noqa: F401
 from matplotlib.colors import Normalize
 from matplotlib import cm
 
-from orbit_ivp_core import simulate_orbit_ivp
+from orbit_ivp_core import simulate_orbit_ivp, extract_gc
 from fields import E_zero, B_dipole_cartesian
-
-sns.set_theme(style="ticks", context="paper")
-
-
-def extract_gc(traj, t, B_func, q=1.0, m=1.0):
-    """
-    Extract true guiding-centre positions by subtracting the Larmor radius vector.
-
-        R_gc = r + (m / q·B²) · (v × B)
-
-    This removes gyration exactly at every time step regardless of phase,
-    eliminating the decimation artefact (wiggles) seen when taking every
-    N-th point.  No step_skip needed for z(t) plots.
-    """
-    r_gc = np.empty((len(t), 3))
-    for i in range(len(t)):
-        r = traj[i, :3]
-        v = traj[i, 3:]
-        B = B_func(r, t[i])
-        B2 = float(np.dot(B, B))
-        r_gc[i] = r + (m / (q * B2)) * np.cross(v, B)
-    return r_gc
 
 # =============================================================
 # Test 14: Tilted dipole — planetary application
@@ -132,7 +110,7 @@ v_par_3d  = abs(np.dot(v0_3d, bhat_3d))
 Omega_3d  = abs(q) * np.linalg.norm(B0_vec_3d) / m
 T_gyro_3d = 2.0 * np.pi / Omega_3d
 T_b_3d    = 4.0 * L0 / v_par_3d
-T_run_3d  = 4.0 * T_b_3d
+T_run_3d  = 15.0 * T_b_3d
 dt_3d     = min(T_b_3d / 1000.0, safety * T_gyro_3d)
 nsteps_3d = int(T_run_3d / dt_3d) + 1
 skip_3d   = max(1, int(round(T_gyro_3d / dt_3d)))
@@ -295,10 +273,11 @@ print("Saved test14_r_xy_sanity.png")
 # uncluttered, independent of the longer z(t) run.
 # Decimated to one point per gyration via skip_3d.
 # ======================================================================
-x_gc = traj_short[::skip_3d, 0]
-y_gc = traj_short[::skip_3d, 1]
-z_gc = traj_short[::skip_3d, 2]
-t_gc = t_short[::skip_3d]
+gc_3d  = extract_gc(traj_short, t_short, B_func_3d, q=q, m=m)
+x_gc   = gc_3d[::skip_3d, 0]
+y_gc   = gc_3d[::skip_3d, 1]
+z_gc   = gc_3d[::skip_3d, 2]
+t_gc   = t_short[::skip_3d]
 tilt_r = np.deg2rad(tilt_show)
 
 norm = Normalize(vmin=t_gc.min(), vmax=t_gc.max())
@@ -307,37 +286,51 @@ cmap = cm.plasma
 fig3 = plt.figure(figsize=(8, 7))
 ax3  = fig3.add_subplot(111, projection="3d")
 
+# GC orbit coloured by time
 for i in range(len(x_gc) - 1):
     c = cmap(norm(0.5 * (t_gc[i] + t_gc[i + 1])))
     ax3.plot(x_gc[i:i+2], y_gc[i:i+2], z_gc[i:i+2],
-             color=c, lw=1.4, alpha=0.9)
+             color=c, lw=1.6, alpha=0.9)
 
 sm = cm.ScalarMappable(cmap=cmap, norm=norm)
 sm.set_array([])
-fig3.colorbar(sm, ax=ax3, pad=0.08, shrink=0.55, label="t (code units)")
+fig3.colorbar(sm, ax=ax3, pad=0.05, shrink=0.55, label="t (code units)")
 
-# Planet sphere
-u_s = np.linspace(0, 2 * np.pi, 24)
-v_s = np.linspace(0, np.pi, 16)
-r_p = 0.35
+# Planet sphere — radius 1 (code units) so it looks right relative to L=3 orbit
+u_s = np.linspace(0, 2 * np.pi, 30)
+v_s = np.linspace(0, np.pi, 20)
+r_p = 1.0
 ax3.plot_surface(
     r_p * np.outer(np.cos(u_s), np.sin(v_s)),
     r_p * np.outer(np.sin(u_s), np.sin(v_s)),
     r_p * np.outer(np.ones_like(u_s), np.cos(v_s)),
-    color="lightgray", alpha=0.9, zorder=5
+    color="lightgray", alpha=0.7, zorder=3, linewidth=0
 )
 
-arrow_len = 0.35 * (x_gc.max() - x_gc.min())
+# Magnetic equatorial plane — dashed circle at L=3 as spatial reference
+# Plane normal: m_hat = (sin θ, 0, cos θ); two perpendicular vectors in the plane:
+#   e1 = (cos θ, 0, -sin θ),  e2 = (0, 1, 0)
+e1  = np.array([ np.cos(tilt_r), 0.0, -np.sin(tilt_r)])
+e2  = np.array([0.0, 1.0, 0.0])
+phi_eq = np.linspace(0, 2 * np.pi, 200)
+eq_x = L0 * (np.cos(phi_eq) * e1[0] + np.sin(phi_eq) * e2[0])
+eq_y = L0 * (np.cos(phi_eq) * e1[1] + np.sin(phi_eq) * e2[1])
+eq_z = L0 * (np.cos(phi_eq) * e1[2] + np.sin(phi_eq) * e2[2])
+ax3.plot(eq_x, eq_y, eq_z, color="crimson", lw=0.8, ls="--",
+         alpha=0.5, label="Mag. equatorial plane (L=3)")
+
+# Axis arrows — fixed length relative to orbit size
+arrow_len = 1.8
 ax3.quiver(0, 0, 0, 0, 0, arrow_len,
-           color="dimgray", lw=1.5, arrow_length_ratio=0.15,
+           color="dimgray", lw=1.5, arrow_length_ratio=0.12,
            label="Rotation axis (z)")
 ax3.quiver(0, 0, 0,
            arrow_len * np.sin(tilt_r), 0, arrow_len * np.cos(tilt_r),
-           color="crimson", lw=1.5, arrow_length_ratio=0.15,
+           color="crimson", lw=1.5, arrow_length_ratio=0.12,
            label=f"Magnetic axis ({tilt_show:.0f}° tilt)")
 
 ax3.set_box_aspect([1, 1, 1])
-ax3.view_init(elev=22, azim=-55)
+ax3.view_init(elev=28, azim=-50)
 ax3.set_xlabel("x")
 ax3.set_ylabel("y")
 ax3.set_zlabel("z")

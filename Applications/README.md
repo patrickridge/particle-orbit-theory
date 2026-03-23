@@ -67,9 +67,9 @@ Before using the dipole field in particle simulations, this script verifies the 
 
 ## test08 — Full orbit in dipole field (code units)
 
-A full particle orbit in a dipole field showing all three motions at once: gyration around field lines, bounce motion between mirror points, and slow azimuthal drift around Earth. Also checks that energy and the magnetic moment μ are conserved.
+A full particle orbit in a dipole field showing all three motions at once: gyration around field lines, bounce between mirror points, and slow azimuthal drift. Uses M = 50, giving T_b/T_g ≈ 7 (marginally adiabatic) — the gyration is visible in the raw orbit. The guiding centre is extracted analytically via `extract_gc` and plotted alongside the full orbit, showing how the smooth bounce envelope differs from the oscillating raw trajectory.
 
-**Key result:** `z(t)` bounces regularly; x-y projection shows slow drift; `μ` conserved to < 1%.
+**Key result:** GC trace shows regular z(t) bounce; mirror points identified from v‖ = 0; `μ` conserved to a few percent (expected for marginal adiabaticity). Energy conserved to < 10⁻⁶.
 
 ---
 
@@ -91,9 +91,14 @@ Runs a full numerical orbit in the dipole field, detects mirror crossings, and c
 
 ## test11 — Full orbit vs Guiding-Centre approximation
 
-The central comparison of the project. Runs both a full Lorentz orbit and the guiding-centre (GC) equations simultaneously in the same dipole field, then overlays the results. The GC approximation is valid when the gyroradius is much smaller than the orbit scale.
+The central validation test of the project. Runs three simultaneous representations in the same dipole field (M = 500, well adiabatic: T_b/T_g ≈ 100):
+1. Full Lorentz orbit
+2. GC extracted analytically from the full orbit via `R_gc = r + (m/qB²)(v × B)`
+3. GC equations of motion integrated directly
 
-**Key result:** GC trajectory tracks the full orbit closely; separation stays near the gyroradius and does not grow over time. `μ` conservation confirms the adiabatic regime.
+The z(t) plot overlays all three; the separation plot shows two metrics: `|r_full − r_GC_eqs|` (includes Larmor radius, ~r_gyro) and `|r_GC_extracted − r_GC_eqs|` (true GC approximation error, much smaller).
+
+**Key result:** GC equations track the extracted GC closely; the true approximation error is far smaller than the Larmor radius and stays bounded over 4 bounce periods. `μ` conserved to < 0.1%.
 
 ---
 
@@ -107,34 +112,34 @@ Draws the magnetic field lines for several L-shells in the meridional (x-z) plan
 
 ## test13 — 10 keV electron in Earth's dipole (SI units)
 
-The physical application. Simulates a 10 keV electron starting at L = 3 in Earth's dipole field using real SI units (metres, Tesla, kg). Computes the gyroperiod, gyroradius, and bounce period in seconds. Compares the numerically detected mirror points to the analytic mirror latitude. Checks that the adiabatic condition holds.
+The physical application. Simulates a 10 keV electron starting at L = 3 in Earth's dipole field using real SI units (metres, Tesla, kg). Computes the gyroperiod (~0.03 s), gyroradius (~200 km), and bounce period (~1.8 s). The z(t) plot shows the full orbit (faint) and the guiding centre extracted via `extract_gc` (solid), with mirror points marked on the GC track. Mirror latitudes are compared to the analytic formula.
 
-**Key result:** Particle bounces at ±z_mirror matching the analytic prediction. `μ` conserved to < 1% over 4 bounce periods (~7 seconds of real time).
+**Key result:** Numerical mirror points match the analytic mirror latitude; `μ` conserved to < 1% over 4 bounce periods (~7 s of real time).
 
 ---
 
 ## test14 — Tilted dipole (planetary application)
 
-Extends the dipole field to include a tilt between the magnetic and rotation axes — as seen on Neptune (47°) and Uranus (59°). A particle starting at the geographic equator (z = 0) is displaced from the magnetic equatorial plane, producing asymmetric bounce motion that differs from the aligned case.
+Extends the dipole field to include a tilt between the magnetic and rotation axes — as seen on Neptune (47°) and Uranus (59°). The starting position is placed on the magnetic equatorial plane for each tilt angle (r₀ = L·(cosθ, 0, −sinθ)), giving equivalent initial conditions across all cases.
 
-Two runs: a long run for all three tilts (0°, 47°, 59°) to compare z(t), and a short 4-bounce run for the 3D guiding-centre orbit figure.
+Two runs: a long run comparing z(t) for three tilts (0°, 47°, 59°) to show how bounce becomes asymmetric as tilt increases, and a 15-bounce run for the 3D GC orbit. An |r_xy|(t) sanity plot confirms the GC stays near L = 3.
 
-**Key result:** Bounce amplitude and midpoint shift with tilt; the asymmetry grows with tilt angle. 3D GC orbit shows the particle tracing a tilted drift shell.
+**Key result:** At 0° bounce is symmetric; at 47°/59° the bounce midpoint shifts and the amplitude modulates. The 3D plot shows the tilted drift shell. GC extracted via `extract_gc`.
 
 ---
 
 ## test15 — Corotation E×B drift (aligned rotating dipole)
 
-Adds the corotation electric field E = −(Ω×r)×B to an aligned dipole. This is the inertial-frame electric field induced when the planet (and its magnetosphere) rotates at angular rate Ω. The resulting E×B drift equals Ω×r exactly — the guiding centre co-rotates with the field line.
+Adds the corotation electric field E = −(Ω×r)×B to an aligned dipole. Two runs are made with the same initial conditions: one with the corotation E field, one without (E = 0). Comparing φ(t) for both isolates the pure E×B contribution from the gradient+curvature drift that is always present.
 
-**Key result:** GC traces a circle of radius ≈ 3 in the x-y plane over one corotation period. Angular rate measured from φ(t) agrees with Ω to < 1%. Bounce motion in z persists simultaneously.
+**Key result:** Without E: GC drifts azimuthally at Ω ≈ 0.008 (gradient+curvature only). With E: total drift Ω ≈ 0.027. Difference ≈ input Ω = 0.020, confirming the E×B co-rotation. Bounce in z persists throughout.
 
 ---
 
 ## test16 — Rotating tilted dipole (full planetary magnetosphere)
 
-The full simulation combining test14 and test15: a Neptune-like tilted dipole (47°) whose moment rotates about z at Ω = 0.02, plus the corotation electric field E = −(Ω×r)×B(r,t). B is now time-varying. The integrator evaluates B at each timestep automatically.
+The full simulation combining test14 and test15: a Neptune-like tilted dipole (47°) whose moment rotates about z at Ω = 0.02, plus the corotation electric field E = −(Ω×r)×B(r,t). B is now time-varying (both tilt and rotation are required to induce a time-dependent B via Faraday's law). The integrator evaluates B at each timestep automatically.
 
-The particle simultaneously gyrates, bounces in the asymmetric tilted geometry, and co-rotates azimuthally — all three adiabatic motions present at once.
+Starting position is at the magnetic equatorial plane (r₀ = L·(cosθ, 0, −sinθ)) for consistency with test14. GC extracted via `extract_gc`. All three adiabatic motions — gyration, bounce, co-rotation — are present simultaneously.
 
-**Key result:** GC co-rotates at rate ≈ Ω; z(t) shows bounce modulated by the rotating asymmetric field; 3D orbit shows the tilted drift shell sweeping around the rotation axis.
+**Key result:** GC co-rotates at a rate slightly above Ω (gradient+curvature drift adds to E×B); z(t) shows bounce amplitude modulated by the rotating asymmetric field; 3D orbit shows the tilted drift shell sweeping around the rotation axis over one corotation period.
