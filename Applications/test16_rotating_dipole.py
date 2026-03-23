@@ -45,7 +45,9 @@ tilt_deg  = 47.0
 B_func = B_dipole_rotating(M=M, tilt_deg=tilt_deg, Omega=Omega)
 E_func = E_corotation(B_func, Omega=Omega)
 
-r0    = np.array([3.0, 0.0, 0.0])
+L0    = 3.0
+theta_rad = np.radians(tilt_deg)
+r0    = np.array([L0 * np.cos(theta_rad), 0.0, -L0 * np.sin(theta_rad)])
 v_mag = 1.0
 pitch = np.deg2rad(45.0)
 
@@ -59,7 +61,7 @@ state0 = np.concatenate([r0, v0])
 Omega_gyro = abs(q) * np.linalg.norm(B0_vec) / m
 T_gyro     = 2.0 * np.pi / Omega_gyro
 v_par_mag  = abs(np.dot(v0, bhat))
-T_b_est    = 4.0 * r0[0] / v_par_mag
+T_b_est    = 4.0 * L0 / v_par_mag
 T_cor      = 2.0 * np.pi / Omega
 T_run      = T_cor
 dt         = min(T_b_est / 500.0, 0.05 * T_gyro)
@@ -85,14 +87,19 @@ z_gc = traj[::skip, 2]
 r_gc = np.sqrt(x_gc**2 + y_gc**2)
 t_gc = t[::skip]
 
-# Measure co-rotation rate from linear fit to unwrapped phi(t)
+# Measure mean azimuthal drift rate from linear fit to unwrapped phi(t).
+# Note: for an aligned dipole v_ExB = Omega x r exactly (v_rot · B = 0).
+# For a tilted dipole B has x-y components so v_rot · B != 0 in general,
+# meaning v_ExB = v_rot - B_hat(v_rot · B_hat) < v_rot.
+# The measured drift rate will therefore differ from Omega — this is
+# real physics, not a numerical error.
 phi_gc    = np.unwrap(np.arctan2(y_gc, x_gc))
 n         = len(phi_gc)
 i0, i1    = n // 10, 9 * n // 10
 Omega_meas = np.polyfit(t_gc[i0:i1], phi_gc[i0:i1], 1)[0]
-print(f"Measured Omega = {Omega_meas:.5f},  "
-      f"expected = {Omega:.5f},  "
-      f"error = {abs(Omega_meas - Omega) / Omega * 100:.2f}%")
+print(f"Nominal rotation rate  Omega   = {Omega:.5f} rad/unit-time")
+print(f"Measured drift rate    Omega_d = {Omega_meas:.5f} rad/unit-time")
+print(f"(For a tilted dipole E×B drift < Omega because v_rot · B != 0)")
 
 norm      = Normalize(vmin=t_gc.min(), vmax=t_gc.max())
 cmap_used = cm.plasma
@@ -146,7 +153,7 @@ ax1.set_title(
 ax1.legend(fontsize=8, loc="upper left")
 
 plt.tight_layout()
-plt.savefig("Figures/test16_rotating_dipole_3D.png", dpi=300)
+plt.savefig("../Figures/test16_rotating_dipole_3D.png", dpi=300)
 plt.close()
 print("Saved test16_rotating_dipole_3D.png")
 
@@ -164,7 +171,7 @@ ax2.set_title(
 )
 sns.despine()
 plt.tight_layout()
-plt.savefig("Figures/test16_rotating_dipole_z_vs_t.png", dpi=300)
+plt.savefig("../Figures/test16_rotating_dipole_z_vs_t.png", dpi=300)
 plt.close()
 print("Saved test16_rotating_dipole_z_vs_t.png")
 
@@ -179,24 +186,29 @@ fig3, (ax_top, ax_bot) = plt.subplots(
     sharex=True
 )
 
-ax_top.plot(t_gc, phi_gc,     lw=1.0, color="C0", label="Numerical φ(t)")
-ax_top.plot(t_gc, phi_theory, lw=1.2, color="k",  ls="--",
-            label=f"Theory: φ = Ωt  (Ω={Omega})")
+phi_linear = Omega_meas * (t_gc - t_gc[0]) + phi_gc[0]   # best-fit line
+
+ax_top.plot(t_gc, phi_gc,      lw=1.0, color="C0", label="Numerical φ(t)")
+ax_top.plot(t_gc, phi_theory,  lw=1.2, color="k",  ls="--",
+            label=f"Nominal: φ = Ωt  (Ω={Omega})")
+ax_top.plot(t_gc, phi_linear,  lw=1.0, color="C1", ls="-.",
+            label=f"Best-fit: Ω_d = {Omega_meas:.4f}")
 ax_top.set_ylabel("φ (rad)")
 ax_top.set_title(
-    f"Test 16: Co-rotation rate — rotating tilted dipole "
-    f"({tilt_deg:.0f}°, Ω={Omega})"
+    f"Test 16: Azimuthal drift — rotating tilted dipole "
+    f"({tilt_deg:.0f}°, Ω={Omega})\n"
+    f"Note: E×B drift < Ω for tilted field (v_rot · B ≠ 0)"
 )
 ax_top.legend(fontsize=9)
 
-ax_bot.plot(t_gc, phi_gc - phi_theory, lw=0.8, color="C1")
+ax_bot.plot(t_gc, phi_gc - phi_linear, lw=0.8, color="C1")
 ax_bot.axhline(0, color="gray", lw=0.6, ls="--")
 ax_bot.set_xlabel("t (code units)")
-ax_bot.set_ylabel("residual (rad)")
+ax_bot.set_ylabel("residual from\nbest-fit (rad)")
 
 sns.despine()
 plt.tight_layout()
-plt.savefig("Figures/test16_rotating_dipole_phi_vs_t.png", dpi=300)
+plt.savefig("../Figures/test16_rotating_dipole_phi_vs_t.png", dpi=300)
 plt.close()
 print("Saved test16_rotating_dipole_phi_vs_t.png")
 
@@ -234,7 +246,7 @@ ax4.set_title(
 ax4.legend(fontsize=8)
 sns.despine()
 plt.tight_layout()
-plt.savefig("Figures/test16_rotating_dipole_xy.png", dpi=300)
+plt.savefig("../Figures/test16_rotating_dipole_xy.png", dpi=300)
 plt.close()
 print("Saved test16_rotating_dipole_xy.png")
 

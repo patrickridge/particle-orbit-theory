@@ -5,7 +5,7 @@ from matplotlib.colors import Normalize
 from matplotlib import cm
 
 from orbit_ivp_core import simulate_orbit_ivp
-from fields import E_corotation, B_dipole_cartesian
+from fields import E_zero, E_corotation, B_dipole_cartesian
 
 sns.set_theme(style="ticks", context="paper")
 
@@ -49,11 +49,21 @@ skip       = max(1, int(round(T_gyro / dt)))
 
 print(f"T_corotation={T_cor:.1f}, T_bounce={T_b_est:.2f}, "
       f"T_b/T_g={T_b_est/T_gyro:.1f}, nsteps={nsteps}")
-print("Integrating ...")
+print(f"Timescale hierarchy: T_gyro={T_gyro:.3f} << T_bounce={T_b_est:.1f} << T_corot={T_cor:.0f}")
+print("Integrating (with E_corotation) ...")
 
 t, traj = simulate_orbit_ivp(
     state0=state0, dt=dt, nsteps=nsteps,
     q=q, m=m, E_func=E_func, B_func=B_func,
+    rtol=1e-9, atol=1e-9,
+)
+print("done.")
+
+# Run B: same parameters but no E field — isolates gradient+curvature drift
+print("Integrating (no E field, gradient+curvature drift only) ...")
+t_noE, traj_noE = simulate_orbit_ivp(
+    state0=state0, dt=dt, nsteps=nsteps,
+    q=q, m=m, E_func=E_zero, B_func=B_func,
     rtol=1e-9, atol=1e-9,
 )
 print("done.")
@@ -64,14 +74,23 @@ y_gc = traj[::skip, 1]
 z_gc = traj[::skip, 2]
 t_gc = t[::skip]
 
+# GC for no-E run
+x_gc_noE = traj_noE[::skip, 0]
+y_gc_noE = traj_noE[::skip, 1]
+t_gc_noE = t_noE[::skip]
+
 # Measure actual co-rotation rate from linear fit to phi(t)
-phi_gc    = np.unwrap(np.arctan2(y_gc, x_gc))
-n         = len(phi_gc)
-i0, i1    = n // 10, 9 * n // 10
-Omega_meas = np.polyfit(t_gc[i0:i1], phi_gc[i0:i1], 1)[0]
-print(f"Measured Omega={Omega_meas:.5f}, "
-      f"expected={Omega:.5f}, "
-      f"error={abs(Omega_meas-Omega)/Omega*100:.2f}%")
+phi_gc     = np.unwrap(np.arctan2(y_gc, x_gc))
+phi_gc_noE = np.unwrap(np.arctan2(y_gc_noE, x_gc_noE))
+n          = len(phi_gc)
+i0, i1     = n // 10, 9 * n // 10
+Omega_meas    = np.polyfit(t_gc[i0:i1],    phi_gc[i0:i1],    1)[0]
+Omega_meas_noE = np.polyfit(t_gc_noE[i0:i1], phi_gc_noE[i0:i1], 1)[0]
+print(f"With E:    measured Ω = {Omega_meas:.5f}  (input Ω = {Omega:.5f},"
+      f"  excess = {(Omega_meas-Omega)/Omega*100:.1f}%)")
+print(f"Without E: measured Ω = {Omega_meas_noE:.5f}  (gradient+curvature drift only)")
+print(f"E×B contribution: ΔΩ = {Omega_meas - Omega_meas_noE:.5f} rad/unit-time"
+      f"  (expected ≈ {Omega:.5f})")
 
 norm      = Normalize(vmin=t_gc.min(), vmax=t_gc.max())
 cmap_used = cm.plasma
@@ -107,7 +126,7 @@ ax1.set_title(f"Test 15: Co-rotation — top-down view (Ω={Omega})")
 ax1.legend(fontsize=8)
 sns.despine()
 plt.tight_layout()
-plt.savefig("Figures/test15_corotation_xy.png", dpi=300)
+plt.savefig("../Figures/test15_corotation_xy.png", dpi=300)
 plt.close()
 print("Saved test15_corotation_xy.png")
 
@@ -122,36 +141,31 @@ ax2.set_ylabel("z (code units)")
 ax2.set_title("Test 15: z(t) — bounce persists under co-rotation")
 sns.despine()
 plt.tight_layout()
-plt.savefig("Figures/test15_corotation_z_vs_t.png", dpi=300)
+plt.savefig("../Figures/test15_corotation_z_vs_t.png", dpi=300)
 plt.close()
 print("Saved test15_corotation_z_vs_t.png")
 
 # ======================================================================
-# Plot 3: φ(t) — co-rotation rate verification
+# Plot 3: φ(t) — co-rotation rate verification + comparison with no-E
 # ======================================================================
 phi_theory = Omega * t_gc
 
-fig3, (ax_top, ax_bot) = plt.subplots(
-    2, 1, figsize=(9, 5),
-    gridspec_kw={"height_ratios": [3, 1]},
-    sharex=True
-)
+fig3, ax_top = plt.subplots(figsize=(9, 4.5))
 
-ax_top.plot(t_gc, phi_gc,     lw=1.0, color="C0", label="Numerical φ(t)")
-ax_top.plot(t_gc, phi_theory, lw=1.2, color="k",  ls="--",
-            label=f"Theory: φ = Ωt  (Ω={Omega})")
+ax_top.plot(t_gc,     phi_gc,     lw=1.0, color="C0",
+            label=f"With E (co-rotation): Ω_meas = {Omega_meas:.4f}")
+ax_top.plot(t_gc_noE, phi_gc_noE, lw=1.0, color="C2", ls="-.",
+            label=f"No E (grad+curv drift only): Ω_meas = {Omega_meas_noE:.4f}")
+ax_top.plot(t_gc,     phi_theory, lw=1.2, color="k",  ls="--",
+            label=f"Pure co-rotation: φ = Ωt  (Ω={Omega})")
+ax_top.set_xlabel("t (code units)")
 ax_top.set_ylabel("φ (rad)")
-ax_top.set_title("Test 15: Co-rotation rate verification")
+ax_top.set_title("Test 15: Azimuthal drift — co-rotation vs gradient/curvature drift\n"
+                 "Gap between blue and dashed = gradient+curvature drift (physical, not error)")
 ax_top.legend(fontsize=9)
-
-ax_bot.plot(t_gc, phi_gc - phi_theory, lw=0.8, color="C1")
-ax_bot.axhline(0, color="gray", lw=0.6, ls="--")
-ax_bot.set_xlabel("t (code units)")
-ax_bot.set_ylabel("residual (rad)")
-
 sns.despine()
 plt.tight_layout()
-plt.savefig("Figures/test15_corotation_phi_vs_t.png", dpi=300)
+plt.savefig("../Figures/test15_corotation_phi_vs_t.png", dpi=300)
 plt.close()
 print("Saved test15_corotation_phi_vs_t.png")
 
