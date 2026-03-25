@@ -257,7 +257,7 @@ energy dep may take a while to bounce
 
 make sure my tools do what want them to do to show results
 
-Prensentation
+Presentation
 Can share slides in advance
 can show code maybe
 one slide of eqns max probably
@@ -270,3 +270,134 @@ what project covers…
 focus on maybe one example
 explain to audience what trying to do and what maths/computing
 is better to show understanding which is key
+
+
+13/3
+
+concentrate on presentation and writing up now
+should be understandable for fellow students and in own words
+will know if too much like the textbook
+check full obrit and gc agree
+play around with dipole field example
+rotating dipole
+dipole on tilt. different planets
+would need to solve faradays eqn
+rotating dipole in litreture might be on website
+not jupiter or saturn as nearly algined rotators maybe neputne uranus
+mpore incluened rotation axis planets
+can give draft of report once
+length of write up doesn’t matter too much
+appendix add code there maybe
+
+
+next example rotating dipole field
+rotating b field induces e field via faradays law
+E produces ExB drift which velocity is omega cross r
+particle is dragged along corotating with planet
+in jupiters example it dominates all other drifts
+baumjohann textbook page 82/83 corotation
+
+omega cross r
+omega (0,0,omega) as rotation around z
+r (x,y,z)
+
+
+17/3
+
+ohms law - fluid eqn
+maxwells eqn
+not simple deriving
+was thinking maxwell eqn approach
+check both are the same
+check old papers 1950s?
+
+start E + vxB = 0
+vrot = omegaxr
+B(r,theta,phi-omegat) which is phi bar in diff frame of ref
+
+calculate vector potential then take d/dt
+what is the vector potential textbook or online
+search vector potential for dipole field
+they give everything alilgned with on eof the axus
+then give tilt to regular acis
+dipole moment at angle with omega with rotatuin axis
+
+how to put tikt into code?
+catesian?
+xy coord t dep
+sin omega t  time dep
+look at how go from sphericla to catsian
+xy have some r sin theta cos phi
+phi bar here
+
+that can be split into 
+may have to go from
+coroting frame into one that deosn’t rotate
+suspisious about what textbook does although could be correct
+could work it out if had time
+
+could say:
+rigidly rotating dipole
+dont have to do all byself
+key thing is the particle orbit theory
+just make sure everything is correct
+and quote source
+google search first place to look
+
+E=-dA/dt is important
+
+take the traumann example
+dissadvantage parallel E field if you put in you get accel along field lines
+assume that ideal ohms law is valid 
+can figure how to make it work
+close to earth many planetary magentosphere
+then dont have to worry about E parallel thing
+hopefully wont make it too hard to find E field
+call other functions
+
+frozen condition?
+
+particle level are stuck to the field line rotate with field
+
+grad and curv drift
+also get ExB drift
+should dominate all the other drifts
+bounce and gryrates while rotating with dipole field
+
+
+presentation:
+general overview
+max 1-2 points to talk about
+could be demonstration of guiding centre in dipole field?
+give a table of contents at start 
+what project does
+beginning show something with constant field
+some survive in cruved and inhomogenous gield
+extra drift motions
+mag momentio
+guiding centre
+mirror in dipole field
+curvatre and grad b drift
+nice to demonstrate
+with figures i have 
+if ready rotating dipole field
+assume that plasma corrotates oartifle  with exb drift
+depending how slides are
+apart from tutle and summary 
+so my project is about this
+and figure and list of bullet points
+talk about this
+should add all text onto slide
+speak with the slides
+the best speaker just have a figure on the slide
+rule is 1-2 mins per slide
+main thing know what you’re talking about make slides easy to understand 
+advice is dont talk about the complete project
+pick about certian bits
+demonstrate what the drifts do 
+in dipole field
+relevent to earth magnetosphere
+possibility
+
+
+Questions to ask next meeting

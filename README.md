@@ -22,6 +22,9 @@ Numerical results are compared against analytic predictions from guiding-centre 
 | Analytic vs numerical bounce period | test10 |
 | Full orbit vs guiding-centre | test11 |
 | 10 keV electron in Earth's dipole (SI units) | test13 |
+| Tilted dipole — Neptune/Uranus geometry | test14 |
+| Corotation E×B drift — aligned rotating dipole | test15 |
+| Rotating tilted dipole — full planetary magnetosphere | test16 |
 
 ---
 
@@ -29,7 +32,7 @@ Numerical results are compared against analytic predictions from guiding-centre 
 
 ```
 Applications/           Core modules and test scripts (run from here)
-  orbit_ivp_core.py     Lorentz force solver wrapping scipy.integrate.solve_ivp
+  orbit_ivp_core.py     Lorentz force solver (scipy solve_ivp) + extract_gc()
   fields.py             Canonical field library (uniform, dipole, mirror, ...)
   guiding_centre.py     Guiding-centre equations of motion (all three drifts)
   test01_*.py  ...      Test scripts — see Applications/README.md for descriptions
@@ -76,11 +79,12 @@ Figures are saved to `Figures/` relative to the working directory.
 
 ## Key Conventions
 
-- **Units:** Dimensionless code units (q = m = B₀ = 1) for tests 01–12. Physical SI units (Re, me, keV) for test13 and `g_bounce_times.py`.
+- **Units:** Dimensionless code units (q = m = B₀ = 1) for tests 01–12, 14–16. Physical SI units (Re, me, keV) for test13 and `g_bounce_times.py`.
 - **State vector:** `[x, y, z, vx, vy, vz]` (6 elements).
 - **Pitch angle:** Equatorial pitch angle α_eq.
 - **Adiabatic invariant:** μ = m v_⊥² / (2B); conservation quality is used as a solver accuracy diagnostic.
 - **Bounce detection:** Zero-crossings of v‖ = v·B̂.
+- **Guiding-centre extraction:** `R_gc = r + (m / q B²)(v × B)` — analytically removes the Larmor radius at every timestep. Implemented in `orbit_ivp_core.extract_gc`.
 - **Plotting:** seaborn (`"ticks"` style, `"paper"` context) + matplotlib, 300 dpi.
 
 ---

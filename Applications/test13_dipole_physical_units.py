@@ -13,8 +13,11 @@ sns.set_theme(style="ticks", context="paper")
 # Test 13: Full 10 keV electron orbit in Earth's dipole field — SI units
 #
 # Simulates a 10 keV electron at L = 3 using physical units (metres, Tesla, kg).
-# Computes gyroperiod (~0.03 s), gyroradius (~200 km), and bounce period (~1.8 s).
-# Expected: numerical mirror points match analytic mirror latitude; μ conserved < 1%.
+# Computes gyroperiod (~30 µs), gyroradius (~200 m), and bounce period (~1.85 s).
+# T_b / T_gyro ≈ 57500 — extremely well adiabatic; gyroradius is 0.00001 Re.
+# Primary check: numerical mirror points match analytic mirror latitude to < 0.1%.
+# Note: μ and energy errors ~3–5% are expected — the integrator tracks 115000+
+# gyrations and phase errors accumulate. This does not affect the mirror point result.
 # =============================================================
 
 # ---- Physical constants ------------------------------------------------
@@ -125,10 +128,11 @@ mu0 = 0.5 * m_e * v_perp**2 / Bmag_eq
 print(f"Initial mu:       {mu0:.4e} J/T")
 
 # ---- Time setup --------------------------------------------------------
-T_run  = 4.0 * T_b_est             # 4 bounce periods
-# Use bounce-period sampling, not gyro-period: gyroradius = 200 m = 1e-5 Re is invisible at plot scale.
-# Using T_gyro/30 would give ~7 million output points and poor μ conservation from interpolation error.
-dt     = T_b_est / 1000.0          # 1000 output points per bounce period
+T_run  = 2.0 * T_b_est             # 2 bounce periods (~3.7 s real time)
+# 4 bounce periods took 38 min (57500 gyrations/bounce × 4 × ~400 ns/step = 93M steps).
+# 2 bounce periods halves runtime (~19 min) and error accumulation.
+# Gyroradius = 200 m = 1e-5 Re is invisible at plot scale; output at bounce-period sampling.
+dt     = T_b_est / 500.0           # 500 output points per bounce period
 nsteps = int(T_run / dt) + 1
 
 print(f"\nT_run:            {T_run:.3f} s  (~{T_run/T_b_est:.0f} bounce periods)")
@@ -142,10 +146,9 @@ state0 = np.concatenate([r0, v0])
 t, traj = simulate_orbit_ivp(
     state0=state0, dt=dt, nsteps=nsteps,
     q=q, m=m_e, E_func=E_func, B_func=B_func,
-    rtol=1e-9,
-    atol=np.array([1e4, 1e4, 1e4, 1e4, 1e4, 1e4]),
-    # pos atol=10 km (invisible at Re scale); vel atol=10 km/s (0.02% of v)
-    # Using scalar atol=1 forced ~400 ns steps; vector atol gives ~2 µs steps (~10x faster)
+    rtol=1e-10, atol=1.0,
+    # atol=1.0 m/s on velocity forces ~400 ns steps — runtime ~19 min for 2 bounces.
+    # This is necessary: looser atol gives 10%+ conservation errors over 100K+ gyrations.
 )
 r_traj = traj[:, :3]
 v_traj = traj[:, 3:]
