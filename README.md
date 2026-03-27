@@ -36,11 +36,18 @@ Applications/           Core modules and test scripts (run from here)
   fields.py             Canonical field library (uniform, dipole, mirror, ...)
   guiding_centre.py     Guiding-centre equations of motion (all three drifts)
   test01_*.py  ...      Test scripts — see Applications/README.md for descriptions
+  animate02_helix.py    Animation: helical orbit in uniform B (rotating camera)
+  animate03_exb.py      Animation: E×B cycloid drift vs no-drift comparison
+  animate05_mirror.py   Animation: magnetic mirror bounce with mirror-point flash
+  animate08_bounce.py   Animation: all three dipole motions (rotating camera)
+  animate14_tilted.py   Animation: side-by-side 0° vs 59° asymmetric bounce
+  animate15_corotation.py  Animation: co-rotation comparison (with/without E field)
+  animate16_rotating.py    Animation: full rotating tilted magnetosphere
 
 Results/                Analytic scripts and output CSVs (run from project root)
   g_bounce_times.py     Analytic bounce periods for 10 keV electrons
 
-Figures/                Auto-generated PNG output files (not tracked in git)
+Figures/                Auto-generated PNG and GIF output files (not tracked in git)
 Notes/                  Reference textbooks (not tracked in git)
 ```
 
@@ -84,7 +91,8 @@ Figures are saved to `Figures/` relative to the working directory.
 - **Pitch angle:** Equatorial pitch angle α_eq.
 - **Adiabatic invariant:** μ = m v_⊥² / (2B); conservation quality is used as a solver accuracy diagnostic.
 - **Bounce detection:** Zero-crossings of v‖ = v·B̂.
-- **Guiding-centre extraction:** `R_gc = r + (m / q B²)(v × B)` — analytically removes the Larmor radius at every timestep. Implemented in `orbit_ivp_core.extract_gc`.
+- **Guiding-centre extraction:** `R_gc = r + (m / q B²)(v × B)` — analytically removes the Larmor radius at every timestep. Implemented in `orbit_ivp_core.extract_gc`. Used in tests 08, 11, 13, 14, 15, 16 and all animation scripts.
+- **Co-rotation nuance:** The E×B drift alone gives exact co-rotation at Ω. In simulations, the measured azimuthal drift is always slightly above Ω because gradient+curvature drift adds an extra contribution (Ω_grad ≈ 0.008 for M=500). This is physical, not a numerical error.
 - **Plotting:** seaborn (`"ticks"` style, `"paper"` context) + matplotlib, 300 dpi.
 
 ---
