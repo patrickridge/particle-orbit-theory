@@ -27,8 +27,15 @@ r_L    = 1.0
 v_perp = r_L * omega
 v_par  = 0.5 * v_perp   # moderate pitch — gives clear bounce
 
-r0     = np.array([r_L, 0.0, 0.0])
-v0     = np.array([0.0, v_perp, v_par])
+# Choose ICs so GC starts on the z-axis (origin):
+# At z=0, B=(0,0,B0). GC = r + (m/qB²)(v×B).
+# With r0=(0,r_L,0), v0=(v_perp,0,v_par):
+#   v×B = (v_perp,0,v_par)×(0,0,B0) = (0*B0-v_par*0, v_par*0-v_perp*B0, 0)
+#        = (0, -v_perp*B0, 0)
+#   (m/qB²)(v×B) = (0, -v_perp/B0, 0) = (0, -r_L, 0)
+#   GC = (0,r_L,0) + (0,-r_L,0) = (0,0,0)  ✓ on axis
+r0     = np.array([0.0, r_L, 0.0])
+v0     = np.array([v_perp, 0.0, v_par])
 state0 = np.concatenate([r0, v0])
 
 # Mirror point estimate: B_mirror = B0/sin²(alpha_0)
@@ -108,9 +115,9 @@ mirror_dot, = ax.plot([], [], [], "o", color="limegreen", ms=12,
 
 time_txt = ax.text2D(0.02, 0.96, "", transform=ax.transAxes, fontsize=9)
 
-lim = r_starts[-1] * 1.3
+lim = r_starts[-1] * 1.2   # GC on axis, particle gyrates with r_L around it
 ax.set_xlim(-lim, lim); ax.set_ylim(-lim, lim)
-ax.set_zlim(-z_mirror * 1.5, z_mirror * 1.5)
+ax.set_zlim(-z_mirror * 1.8, z_mirror * 1.8)
 ax.set_xlabel("x"); ax.set_ylabel("y"); ax.set_zlabel("z")
 ax.set_title("Magnetic mirror: particle bouncing\nbetween mirror points", fontsize=10)
 ax.view_init(elev=20, azim=-55)
