@@ -177,14 +177,41 @@ n3d = int(1.5 * T_b_est / dt)   # 1.5 bounce periods
 
 fig = plt.figure(figsize=(7, 6))
 ax  = fig.add_subplot(111, projection="3d")
+
+# --- Dipole field lines for geometric context ---
+lam_fl  = np.linspace(-1.25, 1.25, 300)
+L_fl    = [2.0, 2.5, 3.0, 3.5, 4.0]
+phi_fl  = np.linspace(0, 2*np.pi, 8, endpoint=False)
+for phi_f in phi_fl:
+    for L_f in L_fl:
+        r_fl = L_f * np.cos(lam_fl)**2
+        xf   = r_fl * np.cos(lam_fl) * np.cos(phi_f)
+        yf   = r_fl * np.cos(lam_fl) * np.sin(phi_f)
+        zf   = r_fl * np.sin(lam_fl)
+        # Blank out below planet surface
+        below = (xf**2 + yf**2 + zf**2) < 1.02**2
+        xf[below] = np.nan; yf[below] = np.nan; zf[below] = np.nan
+        ax.plot(xf, yf, zf, color="steelblue", lw=0.4, alpha=0.18)
+
+# --- Planet sphere ---
+u_s = np.linspace(0, 2*np.pi, 30)
+v_s = np.linspace(0, np.pi, 20)
+ax.plot_surface(
+    np.outer(np.cos(u_s), np.sin(v_s)),
+    np.outer(np.sin(u_s), np.sin(v_s)),
+    np.outer(np.ones_like(u_s), np.cos(v_s)),
+    color="lightsteelblue", alpha=0.6, zorder=0
+)
+
 ax.plot(r[:n3d, 0], r[:n3d, 1], r[:n3d, 2],
-        lw=0.4, alpha=0.3, color="C0", label="Full orbit")
+        lw=0.4, alpha=0.25, color="C0", label="Full orbit")
 ax.plot(r_gc_extracted[:n3d, 0], r_gc_extracted[:n3d, 1], r_gc_extracted[:n3d, 2],
-        lw=1.4, color="C1", label="Guiding centre")
+        lw=1.6, color="C1", label="Guiding centre")
+
 ax.set_xlabel("x"); ax.set_ylabel("y"); ax.set_zlabel("z")
-ax.set_title(f"Test 8: Orbit in dipole (3D, first 1.5 bounce periods)\n"
+ax.set_title(f"Test 8: 3D orbit in dipole field (1.5 bounce periods)\n"
              fr"M={M}, $r_g/r_{{eq}}$={r_gyro/r0[0]:.3f}")
-ax.view_init(elev=20, azim=-60)
+ax.view_init(elev=25, azim=-50)
 ax.legend(fontsize=8)
 plt.tight_layout()
 plt.savefig("../Figures/test08_dipole_orbit_3D.png", dpi=300)

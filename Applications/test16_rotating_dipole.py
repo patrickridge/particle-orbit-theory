@@ -108,6 +108,28 @@ cmap_used = cm.plasma
 fig1 = plt.figure(figsize=(8, 7))
 ax1  = fig1.add_subplot(111, projection="3d")
 
+# --- Tilted dipole field lines at t=0 ---
+tilt_r   = np.deg2rad(tilt_deg)
+cos_tilt = np.cos(tilt_r); sin_tilt = np.sin(tilt_r)
+lam_fl   = np.linspace(-1.25, 1.25, 300)
+L_fl     = [2.0, 2.5, 3.0, 3.5]
+phi_fl   = np.linspace(0, 2*np.pi, 8, endpoint=False)
+for phi_f in phi_fl:
+    for L_f in L_fl:
+        r_fl = L_f * np.cos(lam_fl)**2
+        # In magnetic (untilted) frame
+        xm = r_fl * np.cos(lam_fl) * np.cos(phi_f)
+        ym = r_fl * np.cos(lam_fl) * np.sin(phi_f)
+        zm = r_fl * np.sin(lam_fl)
+        # Rotate to geographic frame (tilt θ around y-axis)
+        xg = xm * cos_tilt + zm * sin_tilt
+        yg = ym.copy()
+        zg = -xm * sin_tilt + zm * cos_tilt
+        below = (xg**2 + yg**2 + zg**2) < 1.02**2
+        xg[below] = np.nan; yg[below] = np.nan; zg[below] = np.nan
+        ax1.plot(xg, yg, zg, color="steelblue", lw=0.4, alpha=0.18)
+
+# GC orbit coloured by time
 for i in range(len(x_gc) - 1):
     c = cmap_used(norm(0.5 * (t_gc[i] + t_gc[i + 1])))
     ax1.plot(x_gc[i:i+2], y_gc[i:i+2], z_gc[i:i+2],
@@ -125,10 +147,9 @@ ax1.plot_surface(
     r_p * np.outer(np.cos(u_s), np.sin(v_s)),
     r_p * np.outer(np.sin(u_s), np.sin(v_s)),
     r_p * np.outer(np.ones_like(u_s), np.cos(v_s)),
-    color="lightgray", alpha=0.9, zorder=5
+    color="lightgray", alpha=0.8, zorder=5
 )
 
-tilt_r    = np.deg2rad(tilt_deg)
 arrow_len = 0.35 * (x_gc.max() - x_gc.min())
 ax1.quiver(0, 0, 0, 0, 0, arrow_len,
            color="dimgray", lw=1.5, arrow_length_ratio=0.15,
