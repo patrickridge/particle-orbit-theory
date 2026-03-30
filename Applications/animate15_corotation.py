@@ -2,12 +2,17 @@
 animate15_corotation.py
 =======================
 Animated comparison of GC drift with and without the corotation E field.
+Restructured to tell the physics story clearly:
 
-Left panel:  No E field — only slow gradient+curvature drift (Ω ≈ 0.008)
-Right panel: Corotation E field — GC rotates at exactly Ω = 0.02 with the planet
+Left panel:  No E field — gradient+curvature drift only (Ω ≈ 0.008).
+             Planet arm rotates at Ω = 0.02. GC falls far behind → no co-rotation.
 
-A rotating "planet arm" in the right panel shows the nominal corotation rate.
-The GC stays locked to it — demonstrating perfect co-rotation.
+Right panel: Corotation E field — total drift (Ω ≈ 0.027).
+             Planet arm at Ω = 0.02. GC tracks the arm closely (E×B ≈ Ω)
+             but is slightly ahead (gradient drift adds a small extra contribution).
+
+Story: E×B drift ≈ Ω (planet rate). Gradient drift adds a small correction on top.
+Without E: particle barely moves. With E: particle approximately co-rotates.
 
 Saves: ../Figures/animate15_corotation.gif
 """
@@ -42,6 +47,7 @@ Omega_gyro = abs(q) * np.linalg.norm(B0_vec) / m
 T_gyro     = 2.0 * np.pi / Omega_gyro
 T_b_est    = 4.0 * r0[0] / abs(np.dot(v0, bhat))
 T_cor      = 2.0 * np.pi / Omega
+L0         = np.linalg.norm(r0)
 
 dt     = min(T_b_est / 300.0, 0.05 * T_gyro)
 nsteps = int(T_cor / dt) + 1
@@ -63,115 +69,128 @@ print("Done.")
 gc     = extract_gc(traj,    t,    B_func, q=q, m=m)
 gc_noE = extract_gc(traj_noE, t,   B_func, q=q, m=m)
 
-# Decimate to one point per gyration
 gc_s     = gc[::skip];    t_s = t[::skip]
 gc_noE_s = gc_noE[::skip]
 
-# ---- Figure — two side-by-side top-down views ----
-fig, (ax_L, ax_R) = plt.subplots(1, 2, figsize=(12, 6))
-fig.suptitle(
-    r"Corotation E×B drift — aligned dipole ($\Omega = 0.02$)"
-    "\nTop-down view over one full planetary rotation",
-    fontsize=11
-)
-
-L0 = np.linalg.norm(r0)
-theta_c = np.linspace(0, 2 * np.pi, 300)
-r_planet = 1.0
-
-for ax, title in zip([ax_L, ax_R],
-                     ["No E field\n(gradient+curvature drift only, slow)",
-                      "Corotation E field\n(GC rotates with planet at Ω)"]):
-    ax.set_xlim(-4.2, 4.2); ax.set_ylim(-4.2, 4.2)
-    ax.set_aspect("equal")
-    ax.set_xlabel("x"); ax.set_ylabel("y")
-    ax.set_title(title, fontsize=9, pad=6)
-
-    # L-shell reference circle
-    ax.plot(L0 * np.cos(theta_c), L0 * np.sin(theta_c),
-            "k--", lw=0.8, alpha=0.4, label=f"L={L0:.0f} shell")
-    # Planet
-    ax.fill(r_planet * np.cos(theta_c), r_planet * np.sin(theta_c),
-            color="lightsteelblue", zorder=5)
-    ax.plot(r_planet * np.cos(theta_c), r_planet * np.sin(theta_c),
-            "k-", lw=0.8, zorder=6)
-
-# ---- Animated artists ----
-TRAIL = 60   # number of GC points in trail
-
-# Left: no E
-trail_L, = ax_L.plot([], [], lw=1.6, color="C0", alpha=0.85,
-                      label="GC (no E)")
-dot_L,   = ax_L.plot([], [], "o", color="C0", ms=8, zorder=10)
-ax_L.legend(fontsize=8, loc="upper right")
-
-# Right: with E + rotating planet arm
-trail_R,  = ax_R.plot([], [], lw=1.8, color="C1", alpha=0.9,
-                       label="GC (with E)")
-dot_R,    = ax_R.plot([], [], "o", color="C1", ms=8, zorder=10)
-
-# Rotating planet arm (shows nominal Ω rotation)
-arm_line, = ax_R.plot([], [], "-", color="crimson", lw=2.0, alpha=0.8,
-                       zorder=7, label="Planet reference (Ω)")
-arm_dot,  = ax_R.plot([], [], "o", color="crimson", ms=9, zorder=8)
-ax_R.legend(fontsize=8, loc="upper right")
-
-# Time labels
-txt_L = ax_L.text(0.03, 0.97, "", transform=ax_L.transAxes,
-                   fontsize=8, va="top")
-txt_R = ax_R.text(0.03, 0.97, "", transform=ax_R.transAxes,
-                   fontsize=8, va="top")
-
-# Measure actual drift rates for annotation
+# Measure actual drift rates
 phi_noE = np.unwrap(np.arctan2(gc_noE_s[:, 1], gc_noE_s[:, 0]))
 phi_E   = np.unwrap(np.arctan2(gc_s[:, 1], gc_s[:, 0]))
 n  = len(t_s)
 i0, i1 = n // 10, 9 * n // 10
 Om_noE  = np.polyfit(t_s[i0:i1], phi_noE[i0:i1], 1)[0]
 Om_E    = np.polyfit(t_s[i0:i1], phi_E[i0:i1],   1)[0]
-ax_L.text(0.03, 0.06, f"Ω_drift ≈ {Om_noE:.4f}", transform=ax_L.transAxes,
-          fontsize=8, color="C0")
-ax_R.text(0.03, 0.06,
-          f"GC Ω ≈ {Om_E:.4f}\nPlanet Ω = {Omega:.4f}",
-          transform=ax_R.transAxes, fontsize=8, color="C1")
+print(f"No-E drift rate: Ω = {Om_noE:.4f}")
+print(f"With-E drift rate: Ω = {Om_E:.4f}")
+print(f"E×B contribution: ΔΩ ≈ {Om_E - Om_noE:.4f}  (input Ω = {Omega})")
+
+# ---- Figure ----
+fig, (ax_L, ax_R) = plt.subplots(1, 2, figsize=(13, 6.5))
+fig.suptitle(
+    r"Co-rotation E×B drift — aligned dipole ($\Omega = 0.02$)"
+    "\nTop-down view over one full planetary rotation",
+    fontsize=14, fontweight="bold"
+)
+
+theta_c  = np.linspace(0, 2 * np.pi, 300)
+r_planet = 1.0
+
+for ax in [ax_L, ax_R]:
+    ax.set_xlim(-4.2, 4.2); ax.set_ylim(-4.2, 4.2)
+    ax.set_aspect("equal")
+    ax.set_xlabel("x", fontsize=12); ax.set_ylabel("y", fontsize=12)
+    ax.tick_params(labelsize=11)
+    # L-shell reference
+    ax.plot(L0 * np.cos(theta_c), L0 * np.sin(theta_c),
+            "k--", lw=0.8, alpha=0.35)
+    # Planet
+    ax.fill(r_planet * np.cos(theta_c), r_planet * np.sin(theta_c),
+            color="lightsteelblue", zorder=5)
+    ax.plot(r_planet * np.cos(theta_c), r_planet * np.sin(theta_c),
+            "k-", lw=0.8, zorder=6)
+
+ax_L.set_title(
+    f"No E field\nGradient drift only  (Ω ≈ {Om_noE:.3f})",
+    fontsize=12, pad=8
+)
+ax_R.set_title(
+    f"Corotation E field\nE×B + gradient drift  (Ω ≈ {Om_E:.3f})",
+    fontsize=12, pad=8
+)
+
+# ---- Animated artists ----
+TRAIL = 60
+
+# Planet arm in BOTH panels (rotates at exactly Ω)
+arm_L,     = ax_L.plot([], [], "-",  color="crimson", lw=2.0, alpha=0.7,
+                        zorder=7, label=f"Planet rotation (Ω = {Omega})")
+arm_dot_L, = ax_L.plot([], [], "o",  color="crimson", ms=9,  zorder=8)
+arm_R,     = ax_R.plot([], [], "-",  color="crimson", lw=2.0, alpha=0.7,
+                        zorder=7, label=f"Planet rotation (Ω = {Omega})")
+arm_dot_R, = ax_R.plot([], [], "o",  color="crimson", ms=9,  zorder=8)
+
+# Left: no E
+trail_L,   = ax_L.plot([], [], lw=1.8, color="C0", alpha=0.85,
+                        label=f"GC  (Ω ≈ {Om_noE:.3f})")
+dot_L,     = ax_L.plot([], [], "o",  color="C0", ms=9,  zorder=10)
+
+# Right: with E
+trail_R,   = ax_R.plot([], [], lw=1.8, color="C1", alpha=0.9,
+                        label=f"GC  (Ω ≈ {Om_E:.3f})")
+dot_R,     = ax_R.plot([], [], "o",  color="C1", ms=9,  zorder=10)
+
+for ax in [ax_L, ax_R]:
+    ax.legend(fontsize=11, loc="upper right")
+
+# Physics annotation boxes
+ax_L.text(0.03, 0.12,
+          "GC lags far behind planet —\nno E field → no co-rotation",
+          transform=ax_L.transAxes, fontsize=10, color="C0",
+          bbox=dict(boxstyle="round,pad=0.3", fc="white", alpha=0.8))
+ax_R.text(0.03, 0.12,
+          f"E×B ≈ Ω (co-rotation)\n+ gradient drift → slightly ahead",
+          transform=ax_R.transAxes, fontsize=10, color="C1",
+          bbox=dict(boxstyle="round,pad=0.3", fc="white", alpha=0.8))
+
+# Time label
+txt = fig.text(0.5, 0.01, "", ha="center", fontsize=12,
+               bbox=dict(boxstyle="round,pad=0.3", fc="white", alpha=0.7))
 
 # ---- Animation ----
 N_FRAMES  = 220
 skip_anim = max(1, len(t_s) // N_FRAMES)
 
 def update(frame):
-    j  = frame * skip_anim
-    j  = min(j, len(t_s) - 1)
-    j0 = max(0, j - TRAIL)
+    j     = frame * skip_anim
+    j     = min(j, len(t_s) - 1)
+    j0    = max(0, j - TRAIL)
     t_now = t_s[j]
 
-    # Left panel — no E
-    trail_L.set_data(gc_noE_s[j0:j, 0], gc_noE_s[j0:j, 1])
-    dot_L.set_data([gc_noE_s[j, 0]], [gc_noE_s[j, 1]])
-    txt_L.set_text(f"t = {t_now:.0f} / {T_cor:.0f}\n"
-                   f"({100*t_now/T_cor:.0f}% of rotation)")
-
-    # Right panel — with E
-    trail_R.set_data(gc_s[j0:j, 0], gc_s[j0:j, 1])
-    dot_R.set_data([gc_s[j, 0]], [gc_s[j, 1]])
-
-    # Rotating planet arm at nominal Ω
+    # Rotating planet arm (both panels)
     phi_planet = Omega * t_now
     px = L0 * np.cos(phi_planet)
     py = L0 * np.sin(phi_planet)
-    arm_line.set_data([0, px], [0, py])
-    arm_dot.set_data([px], [py])
+    for arm, arm_dot in [(arm_L, arm_dot_L), (arm_R, arm_dot_R)]:
+        arm.set_data([0, px], [0, py])
+        arm_dot.set_data([px], [py])
 
-    txt_R.set_text(f"t = {t_now:.0f} / {T_cor:.0f}\n"
-                   f"({100*t_now/T_cor:.0f}% of rotation)")
+    # Left — no E
+    trail_L.set_data(gc_noE_s[j0:j, 0], gc_noE_s[j0:j, 1])
+    dot_L.set_data([gc_noE_s[j, 0]], [gc_noE_s[j, 1]])
 
-    return trail_L, dot_L, trail_R, dot_R, arm_line, arm_dot, txt_L, txt_R
+    # Right — with E
+    trail_R.set_data(gc_s[j0:j, 0], gc_s[j0:j, 1])
+    dot_R.set_data([gc_s[j, 0]], [gc_s[j, 1]])
+
+    pct = 100 * t_now / T_cor
+    txt.set_text(f"t = {t_now:.0f} / {T_cor:.0f}  —  {pct:.0f}% of one planetary rotation")
+
+    return trail_L, dot_L, trail_R, dot_R, arm_L, arm_dot_L, arm_R, arm_dot_R, txt
 
 n_anim = min(N_FRAMES, len(t_s) // skip_anim)
 anim = animation.FuncAnimation(fig, update, frames=n_anim,
                                 interval=50, blit=False)
 
-plt.tight_layout()
+plt.tight_layout(rect=[0, 0.04, 1, 1])
 
 out = "../Figures/animate15_corotation.gif"
 print(f"Saving {out} ...")

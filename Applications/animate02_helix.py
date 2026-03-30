@@ -26,8 +26,14 @@ r_L    = 1.0               # gyroradius
 v_perp = r_L * omega
 v_par  = 0.4               # parallel drift speed
 
-r0     = np.array([r_L, 0.0, 0.0])
-v0     = np.array([0.0, v_perp, v_par])
+# Choose ICs so GC starts on the z-axis:
+# At z=0, B=(0,0,B0). GC = r + (m/qB²)(v×B).
+# With r0=(0,r_L,0), v0=(v_perp,0,v_par):
+#   v×B = (v_perp,0,v_par)×(0,0,B0) = (0,-v_perp*B0,0)
+#   (m/qB²)(v×B) = (0,-r_L,0)
+#   GC = (0,r_L,0)+(0,-r_L,0) = (0,0,0) ✓
+r0     = np.array([0.0, r_L, 0.0])
+v0     = np.array([v_perp, 0.0, v_par])
 state0 = np.concatenate([r0, v0])
 
 T_run  = 5 * T_gyro
@@ -45,31 +51,34 @@ fig = plt.figure(figsize=(7, 7))
 ax  = fig.add_subplot(111, projection="3d")
 ax.set_facecolor("white")
 
-# Static field lines (vertical arrows along z)
+# Static field lines — GC is on z-axis so show lines close to it
 z_fl = np.linspace(0, T_run * v_par * 1.05, 20)
-for xf, yf in [(-2.5, -2.5), (-2.5, 2.5), (2.5, -2.5), (2.5, 2.5),
-                (0, -2.5), (0, 2.5), (-2.5, 0), (2.5, 0)]:
+for xf, yf in [(0, 0), (-1.3, 0), (1.3, 0), (0, -1.3), (0, 1.3),
+               (-1.3, -1.3), (-1.3, 1.3), (1.3, -1.3), (1.3, 1.3)]:
+    lw  = 1.5 if (xf == 0 and yf == 0) else 0.6
+    alp = 0.7 if (xf == 0 and yf == 0) else 0.3
     ax.plot([xf]*2, [yf]*2, [z_fl[0], z_fl[-1]],
-            color="steelblue", lw=0.6, alpha=0.35)
+            color="steelblue", lw=lw, alpha=alp)
     ax.quiver(xf, yf, z_fl[-1], 0, 0, 0.3,
-              color="steelblue", lw=0.6, alpha=0.5, arrow_length_ratio=0.8)
+              color="steelblue", lw=lw, alpha=alp, arrow_length_ratio=0.8)
 
 # Full orbit (faint static reference)
 ax.plot(r[:, 0], r[:, 1], r[:, 2], lw=0.5, alpha=0.12, color="gray")
 
 # Animated artists
 TRAIL = 80
-trail, = ax.plot([], [], [], lw=1.6, color="C1", label="Particle orbit")
-dot,   = ax.plot([], [], [], "o", color="C1", ms=7, zorder=10)
-gc_ln, = ax.plot([], [], [], lw=1.2, color="C0", ls="--", alpha=0.7,
-                 label="Guiding centre (field line)")
-time_txt = ax.text2D(0.02, 0.95, "", transform=ax.transAxes, fontsize=9)
+trail,    = ax.plot([], [], [], lw=1.6, color="C1", label="Particle orbit")
+dot,      = ax.plot([], [], [], "o", color="C1", ms=7, zorder=10)
+gc_trail, = ax.plot([], [], [], lw=1.8, color="C0", ls="--", alpha=0.8,
+                    label="Guiding centre")
+gc_dot,   = ax.plot([], [], [], "s", color="C0", ms=8, zorder=10)
+time_txt  = ax.text2D(0.02, 0.95, "", transform=ax.transAxes, fontsize=12)
 
-ax.set_xlim(-2.8, 2.8); ax.set_ylim(-2.8, 2.8)
+ax.set_xlim(-1.5, 1.5); ax.set_ylim(-1.5, 1.5)
 ax.set_zlim(0, T_run * v_par * 1.05)
 ax.set_xlabel("x"); ax.set_ylabel("y"); ax.set_zlabel("z")
-ax.set_title("Uniform B field  (B = Bẑ)\nGyration + parallel drift → helix", fontsize=10)
-ax.legend(fontsize=8, loc="upper right")
+ax.set_title("Uniform B field  (B = Bẑ)\nGyration + parallel drift → helix", fontsize=13)
+ax.legend(fontsize=11, loc="upper right")
 
 # GC path (on-axis, z only — since no drift in x/y in uniform B+no E)
 z_gc = v_par * t
@@ -88,16 +97,16 @@ def update(frame):
     dot.set_data([r[i, 0]], [r[i, 1]])
     dot.set_3d_properties([r[i, 2]])
 
-    gc_ln.set_data([0, 0], [0, 0])
-    gc_ln.set_3d_properties([0, r[i, 2]])
-
-    # Slowly rotate camera
-    ax.view_init(elev=20, azim=-60 + frame * 1.2)
+    # GC moves along z-axis at v_par — no gyration, just straight drift
+    gc_trail.set_data([0] * (i - i0), [0] * (i - i0))
+    gc_trail.set_3d_properties(v_par * t[i0:i])
+    gc_dot.set_data([0], [0])
+    gc_dot.set_3d_properties([v_par * t[i]])
 
     time_txt.set_text(
         f"t = {t[i]:.1f}  ({t[i]/T_gyro:.1f} gyrations)"
     )
-    return trail, dot, gc_ln, time_txt
+    return trail, dot, gc_trail, gc_dot, time_txt
 
 n_anim = min(N_FRAMES, len(t) // skip)
 anim = animation.FuncAnimation(fig, update, frames=n_anim,
