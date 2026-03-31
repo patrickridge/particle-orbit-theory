@@ -7,12 +7,15 @@ slow azimuthal drift. Camera slowly rotates.
 Saves:  ../Figures/animate08_bounce.gif
 """
 
+import os
 import numpy as np
 import matplotlib.pyplot as plt
 import matplotlib.animation as animation
 from mpl_toolkits.mplot3d import Axes3D  # noqa: F401
 
 from orbit_ivp_core import simulate_orbit_ivp, extract_gc
+
+_DIR = os.path.dirname(os.path.abspath(__file__))
 from fields import E_zero, B_dipole_cartesian
 
 # ---- Parameters (same as test08) ----
@@ -31,6 +34,15 @@ Omega_gyro = abs(q) * np.linalg.norm(B0_vec) / m
 T_gyro     = 2.0 * np.pi / Omega_gyro
 v_par_mag  = v_mag * np.cos(pitch)
 T_b_est    = 4.0 * r0[0] / v_par_mag
+
+# Azimuthal grad+curv drift rate in equatorial dipole (Baumjohann & Treumann §2.3)
+# Ω_drift = 3 v² (1 + sin²α/2) / (2 Ω_gyro r²)
+sin_p       = np.sin(pitch)
+Omega_drift = 3.0 * v_mag**2 * (1.0 + sin_p**2 / 2.0) / (2.0 * Omega_gyro * r0[0]**2)
+T_drift     = 2.0 * np.pi / Omega_drift
+# Neptune rotation period ≈ 16.11 hr = 58 000 s (comment only — code units are dimensionless)
+T_Neptune_s = 58000.0
+ratio_drift = T_drift / T_Neptune_s
 
 # ~30 points per gyration for smooth animation
 dt_anim = T_gyro / 30.0
@@ -56,7 +68,7 @@ print(f"Mirror points at t ≈ {mirror_t}")
 print("Done.")
 
 # ---- Build figure ----
-fig = plt.figure(figsize=(8, 7))
+fig = plt.figure(figsize=(10, 8))
 ax  = fig.add_subplot(111, projection="3d")
 ax.set_facecolor("white")
 
@@ -96,6 +108,18 @@ mirror_flash, = ax.plot([], [], [], "o", color="limegreen", ms=14,
                          zorder=12, alpha=0, label="Mirror point!")
 
 time_txt = ax.text2D(0.02, 0.96, "", transform=ax.transAxes, fontsize=9)
+
+# Static timescale panel
+timescale_str = (
+    f"Timescales\n"
+    f"T_gyro   = {T_gyro:.2f}\n"
+    f"T_bounce ≈ {T_b_est:.1f}\n"
+    f"T_drift  ≈ {T_drift:.0f}\n"
+    f"T_drift/T_Neptune ≈ {ratio_drift:.2e}"
+)
+ax.text2D(0.02, 0.78, timescale_str, transform=ax.transAxes, fontsize=8,
+          verticalalignment="top",
+          bbox=dict(boxstyle="round,pad=0.3", fc="white", alpha=0.75))
 
 ax.set_xlim(-4.5, 4.5); ax.set_ylim(-4.5, 4.5); ax.set_zlim(-3.0, 3.0)
 ax.set_xlabel("x"); ax.set_ylabel("y"); ax.set_zlabel("z")
@@ -144,7 +168,8 @@ n_anim = min(N_FRAMES, len(t) // skip)
 anim = animation.FuncAnimation(fig, update, frames=n_anim,
                                 interval=50, blit=False)
 
-out = "../Figures/animate08_bounce.gif"
+fig.tight_layout()
+out = os.path.join(_DIR, "..", "Figures", "animate08_bounce.gif")
 print(f"Saving {out} ...")
 anim.save(out, writer="pillow", fps=20, dpi=120)
 print("Done.")

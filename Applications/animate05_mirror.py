@@ -8,12 +8,15 @@ strong-field ends (mirror points), bouncing back and forth.
 Saves: ../Figures/animate05_mirror.gif
 """
 
+import os
 import numpy as np
 import matplotlib.pyplot as plt
 import matplotlib.animation as animation
 from mpl_toolkits.mplot3d import Axes3D  # noqa: F401
 
 from orbit_ivp_core import simulate_orbit_ivp, extract_gc, q, m
+
+_DIR = os.path.dirname(os.path.abspath(__file__))
 from fields import E_zero, B_mirror_div_free
 
 # ---- Parameters (match test05) ----
@@ -82,20 +85,20 @@ for r0_fl in r_starts:
         fl_data.append((xf, yf, z_fl))
 
 # ---- Figure ----
-fig = plt.figure(figsize=(7, 8))
+fig = plt.figure(figsize=(12, 8))
 ax  = fig.add_subplot(111, projection="3d")
 ax.set_facecolor("white")
 
 # Static field lines
 for xf, yf, zf in fl_data:
-    ax.plot(xf, yf, zf, color="steelblue", lw=0.5, alpha=0.2)
+    ax.plot(xf, yf, zf, color="steelblue", lw=1.2, alpha=0.30)
 
 # Mirror plane indicators (horizontal rings at ±z_mirror)
 theta_r = np.linspace(0, 2 * np.pi, 80)
 r_ring  = r_starts[-1] / np.sqrt(1 + alpha * z_mirror**2) * 1.1
 for zm in [z_mirror, -z_mirror]:
     ax.plot(r_ring * np.cos(theta_r), r_ring * np.sin(theta_r),
-            [zm] * 80, "r--", lw=1.0, alpha=0.5)
+            [zm] * 80, "r--", lw=2.0, alpha=0.75)
 ax.text(r_ring + 0.1, 0, z_mirror, "mirror", color="crimson", fontsize=8)
 ax.text(r_ring + 0.1, 0, -z_mirror, "mirror", color="crimson", fontsize=8)
 
@@ -119,9 +122,9 @@ lim = r_starts[-1] * 1.2   # GC on axis, particle gyrates with r_L around it
 ax.set_xlim(-lim, lim); ax.set_ylim(-lim, lim)
 ax.set_zlim(-z_mirror * 1.8, z_mirror * 1.8)
 ax.set_xlabel("x"); ax.set_ylabel("y"); ax.set_zlabel("z")
-ax.set_title("Magnetic mirror: particle bouncing\nbetween mirror points", fontsize=10)
+ax.set_title("Magnetic mirror bounce", fontsize=9)
 ax.view_init(elev=20, azim=-55)
-ax.legend(fontsize=8, loc="upper right")
+ax.legend(fontsize=7, loc="upper right")
 
 N_FRAMES = 200
 skip     = max(1, len(t) // N_FRAMES)
@@ -158,7 +161,8 @@ n_anim = min(N_FRAMES, len(t) // skip)
 anim = animation.FuncAnimation(fig, update, frames=n_anim,
                                 interval=50, blit=False)
 
-out = "../Figures/animate05_mirror.gif"
+fig.tight_layout()
+out = os.path.join(_DIR, "..", "Figures", "animate05_mirror.gif")
 print(f"Saving {out} ...")
 anim.save(out, writer="pillow", fps=20, dpi=120)
 print("Done.")

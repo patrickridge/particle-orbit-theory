@@ -401,3 +401,43 @@ possibility
 
 
 Questions to ask next meeting
+
+
+30/3
+
+Neptune rotation rate in code units
+--------------------------------
+Advisor asked whether the actual Neptune rotation rate can be used in animations.
+
+Finding: the code uses dimensionless units. The physically meaningful quantity is
+the ratio  Ω_planet / Ω_c  (rotation rate / gyrofrequency).
+
+For the code (animate15, M=500, r0=3):
+  Ω_planet (code) = 0.02,  Ω_c (code) = qB/m = 500/27 ≈ 18.5
+  → Ω/Ω_c ≈ 0.001
+
+For a real proton at r = 3 R_Neptune (B ≈ 5×10⁻⁷ T):
+  Ω_c (physical) ≈ 50 rad/s
+  ω_Neptune = 1.08×10⁻⁴ rad/s  (period 16.11 hr = 58 000 s)
+  → ω/Ω_c ≈ 2×10⁻⁶  (roughly 500× smaller than the code value)
+
+Conclusion: the real Neptune Ω would make the planet arm essentially stationary
+in any animation — the particle drifts far faster than Neptune rotates.
+Ω = 0.02 is a pedagogical choice to make corotation visible. Label in
+presentation as "Ω = 0.02 (scaled for visibility)".
+
+For the write-up: quote the dimensionless ratio and explain why direct animation
+of the physical rate is impractical. The E×B corotation physics is identical.
+
+Polarisation drift (checked 30/3)
+----------------------------------
+In animate15 parameters, v_pol / v_gradB ≈ 0.5%. Negligible. Polarisation drift
+is not included in guiding_centre.py and does not need to be for this project.
+
+Curvature vs grad-B drift isolation (checked 30/3)
+-----------------------------------------------------
+Cannot isolate curvature drift from grad-B drift in any field satisfying ∇·B = 0.
+B_curved_z has both effects. This is a fundamental physics constraint, not a code gap.
+guiding_centre.py computes them separately (lines 102, 107) but they combine in the
+total drift. Presentation message: "both always act together in a real field — formulas
+are separate but effects add in the same azimuthal direction."
