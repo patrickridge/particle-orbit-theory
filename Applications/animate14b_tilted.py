@@ -1,12 +1,18 @@
 """
-animate14a_aligned.py
-=====================
-GC bounce in a 0° (aligned) dipole.
-Pair with animate14b_tilted.gif — same physics, same starting conditions
-relative to the magnetic axis. In the aligned case the magnetic and geographic
-axes coincide, so the drift orbit sits in the geographic equatorial plane.
+animate14b_tilted.py
+====================
+GC bounce in a 59° tilted dipole.
 
-Saves: ../Figures/animate14a_aligned.gif
+The particle starts at the same position relative to the magnetic axis as
+in animate14a_aligned — on the magnetic equatorial plane at L = 3.
+The key visual message: the drift orbit follows the tilted magnetic geometry,
+not the geographic coordinate system.
+
+Two reference planes are drawn:
+  Grey dashed  — geographic equatorial plane (z = 0)
+  Crimson dashed — magnetic equatorial plane (perpendicular to tilted axis)
+
+Saves: ../Figures/animate14b_tilted.gif
 """
 
 import os
@@ -26,10 +32,14 @@ M     = 500.0
 L0    = 3.0
 v_mag = 1.0
 pitch = np.deg2rad(45.0)
+tilt  = 59.0
 
-# Start on the magnetic equatorial plane (same relative position as 14b)
-r0     = np.array([L0, 0.0, 0.0])
-B_func = B_dipole_cartesian(M=M, tilt_deg=0.0)
+theta_rad    = np.radians(tilt)
+cos_t, sin_t = np.cos(theta_rad), np.sin(theta_rad)
+
+# Start on the magnetic equatorial plane — same relative position as 14a
+r0     = np.array([L0 * cos_t, 0.0, -L0 * sin_t])
+B_func = B_dipole_cartesian(M=M, tilt_deg=tilt)
 B0_vec = B_func(r0, 0.0)
 bhat   = B0_vec / np.linalg.norm(B0_vec)
 eperp  = np.array([0.0, 1.0, 0.0])
@@ -44,7 +54,7 @@ dt        = min(T_b_est / 400.0, 0.05 * T_gyro)
 T_run     = 5.0 * T_b_est
 nsteps    = int(T_run / dt) + 1
 
-print(f"Aligned: T_gyro={T_gyro:.3f}, T_b={T_b_est:.2f}, nsteps={nsteps}")
+print(f"Tilted {tilt:.0f}°: T_gyro={T_gyro:.3f}, T_b={T_b_est:.2f}, nsteps={nsteps}")
 print("Integrating ...")
 t, traj = simulate_orbit_ivp(state0=state0, dt=dt, nsteps=nsteps,
                               q=q, m=m, E_func=E_zero, B_func=B_func,
@@ -61,21 +71,24 @@ for pane in (ax.xaxis.pane, ax.yaxis.pane, ax.zaxis.pane):
     pane.set_edgecolor("#e0e0e0")
 ax.grid(False)
 
-# ---- Field lines — faint, context only ----
+# ---- Tilted field lines — faint, context only ----
 lam_fl = np.linspace(-1.25, 1.25, 300)
 L_fl   = [2.0, 2.5, 3.0, 3.5]
 phi_fl = np.linspace(0, 2 * np.pi, 8, endpoint=False)
 for phi_f in phi_fl:
     for L_f in L_fl:
         r_fl = L_f * np.cos(lam_fl) ** 2
-        xf   = r_fl * np.cos(lam_fl) * np.cos(phi_f)
-        yf   = r_fl * np.cos(lam_fl) * np.sin(phi_f)
-        zf   = r_fl * np.sin(lam_fl)
-        below = (xf**2 + yf**2 + zf**2) < 1.02**2
-        xf[below] = np.nan; yf[below] = np.nan; zf[below] = np.nan
-        ax.plot(xf, yf, zf, color="#aaaaaa", lw=0.5, alpha=0.22)
+        xm   = r_fl * np.cos(lam_fl) * np.cos(phi_f)
+        ym   = r_fl * np.cos(lam_fl) * np.sin(phi_f)
+        zm   = r_fl * np.sin(lam_fl)
+        xg   =  xm * cos_t + zm * sin_t
+        yg   =  ym.copy()
+        zg   = -xm * sin_t + zm * cos_t
+        below = (xg**2 + yg**2 + zg**2) < 1.02**2
+        xg[below] = np.nan; yg[below] = np.nan; zg[below] = np.nan
+        ax.plot(xg, yg, zg, color="#aaaaaa", lw=0.5, alpha=0.22)
 
-# ---- Geographic equatorial plane ring (z = 0) ----
+# ---- Geographic equatorial plane (z = 0) — grey dashed ----
 phi_r = np.linspace(0, 2 * np.pi, 200)
 R_eq  = 3.8
 ax.plot(R_eq * np.cos(phi_r), R_eq * np.sin(phi_r), np.zeros(200),
@@ -83,6 +96,22 @@ ax.plot(R_eq * np.cos(phi_r), R_eq * np.sin(phi_r), np.zeros(200),
 ax.text(R_eq * np.cos(np.pi * 1.25),
         R_eq * np.sin(np.pi * 1.25) - 0.3, 0.15,
         "Geographic equatorial plane", fontsize=7, color="#888888")
+
+# ---- Magnetic equatorial plane — perpendicular to tilted magnetic axis ----
+# Normal to plane: m̂ = (sin_t, 0, cos_t)
+# Basis in plane:  ê1 = (0, 1, 0),  ê2 = m̂ × ê1 = (-cos_t, 0, sin_t)
+R_mag    = 3.2
+phi_m    = np.linspace(0, 2 * np.pi, 200)
+x_meq    = -R_mag * np.sin(phi_m) * cos_t
+y_meq    =  R_mag * np.cos(phi_m)
+z_meq    =  R_mag * np.sin(phi_m) * sin_t
+ax.plot(x_meq, y_meq, z_meq,
+        color="crimson", lw=1.4, alpha=0.50, linestyle="--")
+# Label at a well-visible point on the ring
+lbl_idx = 40   # phi ≈ 72°, points away from centre of view
+ax.text(x_meq[lbl_idx] + 0.1, y_meq[lbl_idx] + 0.1, z_meq[lbl_idx] + 0.15,
+        "Magnetic equatorial plane", fontsize=7,
+        color="crimson", fontweight="bold")
 
 # ---- Planet sphere ----
 u_s = np.linspace(0, 2 * np.pi, 24)
@@ -94,21 +123,26 @@ ax.plot_surface(
     color="lightsteelblue", alpha=0.55, zorder=0
 )
 
-# ---- Magnetic axis arrow — prominent, labelled ----
-ax.quiver(0, 0, -2.2, 0, 0, 4.4,
+# ---- Tilted magnetic axis arrow — prominent, labelled ----
+ax.quiver(0, 0, 0,
+          2.2 * sin_t, 0, 2.2 * cos_t,
           color="crimson", lw=3.0, arrow_length_ratio=0.12, zorder=5)
-ax.text(0.15, 0, 2.45, "Magnetic axis", fontsize=8,
+ax.quiver(0, 0, 0,
+          -2.2 * sin_t, 0, -2.2 * cos_t,
+          color="crimson", lw=1.5, alpha=0.35, arrow_length_ratio=0.0)
+ax.text(2.2 * sin_t + 0.15, 0.1, 2.2 * cos_t + 0.1,
+        "Tilted magnetic axis", fontsize=8,
         color="crimson", fontweight="bold")
 
 # ---- Static full GC path — bounce envelope visible from frame 1 ----
-ax.plot(gc[:, 0], gc[:, 1], gc[:, 2], lw=1.2, alpha=0.30, color="C0")
+ax.plot(gc[:, 0], gc[:, 1], gc[:, 2], lw=1.2, alpha=0.30, color="C2")
 
 # ---- Axes ----
 ax.set_xlim(-4, 4); ax.set_ylim(-4, 4); ax.set_zlim(-3.5, 3.5)
 ax.set_xlabel("x", fontsize=9); ax.set_ylabel("y", fontsize=9)
 ax.set_zlabel("z", fontsize=9)
 ax.tick_params(labelsize=7)
-ax.set_title("Aligned dipole", fontsize=12, pad=8, fontweight="bold")
+ax.set_title("Tilted dipole", fontsize=12, pad=8, fontweight="bold")
 
 # ---- Animated artists ----
 N_FRAMES = 200
@@ -116,13 +150,13 @@ N        = len(t)
 skip     = max(1, N // N_FRAMES)
 TRAIL    = max(50, N_FRAMES // 5)
 
-trail, = ax.plot([], [], [], lw=2.8, color="C0", zorder=10)
-dot,   = ax.plot([], [], [], "o", color="C0", ms=8, zorder=11,
+trail, = ax.plot([], [], [], lw=2.8, color="C2", zorder=10)
+dot,   = ax.plot([], [], [], "o", color="C2", ms=8, zorder=11,
                  markeredgecolor="white", markeredgewidth=1.4)
 
 # Direct orbit label (replaces legend)
 ax.text2D(0.04, 0.06, "Guiding-centre drift path",
-          transform=ax.transAxes, fontsize=8, color="C0", fontweight="bold")
+          transform=ax.transAxes, fontsize=8, color="C2", fontweight="bold")
 
 fig.tight_layout()
 
@@ -140,7 +174,7 @@ def update(frame):
 
 anim = animation.FuncAnimation(fig, update, frames=N_FRAMES,
                                 interval=55, blit=False)
-out = os.path.join(_DIR, "..", "Figures", "animate14a_aligned.gif")
+out = os.path.join(_DIR, "..", "Figures", "animate14b_tilted.gif")
 print(f"Saving {out} ...")
 anim.save(out, writer="pillow", fps=18, dpi=120)
 print("Done.")
