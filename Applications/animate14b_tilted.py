@@ -86,7 +86,7 @@ for phi_f in phi_fl:
         zg   = -xm * sin_t + zm * cos_t
         below = (xg**2 + yg**2 + zg**2) < 1.02**2
         xg[below] = np.nan; yg[below] = np.nan; zg[below] = np.nan
-        ax.plot(xg, yg, zg, color="#aaaaaa", lw=0.5, alpha=0.22)
+        ax.plot(xg, yg, zg, color="#909090", lw=0.5, alpha=0.28)
 
 # ---- Geographic equatorial plane (z = 0) — grey dashed ----
 phi_r = np.linspace(0, 2 * np.pi, 200)
@@ -142,7 +142,7 @@ ax.set_xlim(-4, 4); ax.set_ylim(-4, 4); ax.set_zlim(-3.5, 3.5)
 ax.set_xlabel("x", fontsize=9); ax.set_ylabel("y", fontsize=9)
 ax.set_zlabel("z", fontsize=9)
 ax.tick_params(labelsize=7)
-ax.set_title("Tilted dipole", fontsize=12, pad=8, fontweight="bold")
+ax.set_title("Tilted dipole (59° tilt)", fontsize=12, pad=8, fontweight="bold")
 
 # ---- Animated artists ----
 N_FRAMES = 200
@@ -158,6 +158,7 @@ dot,   = ax.plot([], [], [], "o", color="C2", ms=8, zorder=11,
 ax.text2D(0.04, 0.06, "Guiding-centre drift path",
           transform=ax.transAxes, fontsize=8, color="C2", fontweight="bold")
 
+ax.view_init(elev=25, azim=-60)
 fig.tight_layout()
 
 def update(frame):
@@ -169,7 +170,6 @@ def update(frame):
     dot.set_data([gc[i, 0]], [gc[i, 1]])
     dot.set_3d_properties([gc[i, 2]])
 
-    ax.view_init(elev=20, azim=-60 + frame * 0.6)
     return trail, dot
 
 anim = animation.FuncAnimation(fig, update, frames=N_FRAMES,

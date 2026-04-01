@@ -91,7 +91,7 @@ ax.set_facecolor("white")
 
 # Static field lines
 for xf, yf, zf in fl_data:
-    ax.plot(xf, yf, zf, color="#888888", lw=1.1, alpha=0.42)
+    ax.plot(xf, yf, zf, color="#888888", lw=1.1, alpha=0.3)
 
 # Mirror plane indicators (horizontal rings at ±z_mirror)
 theta_r = np.linspace(0, 2 * np.pi, 80)
