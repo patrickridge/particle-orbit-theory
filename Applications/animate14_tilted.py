@@ -8,6 +8,13 @@ Left:  aligned dipole  — symmetric bounce about z=0
 Right: 59° tilted dipole — asymmetric bounce, mirror points at
        different geographic latitudes north and south.
 
+Key improvements over earlier version:
+  - Full (non-decimated) GC path used so trail is smooth and continuous
+  - Complete GC path drawn as faint static background from the start,
+    so the bounce shape is immediately visible
+  - z=0 geographic equatorial ring on each panel highlights the asymmetry
+  - Longer run (5 bounces) so the pattern repeats clearly
+
 Saves: ../Figures/animate14_tilted.gif
 """
 
@@ -26,8 +33,9 @@ L0    = 3.0
 v_mag = 1.0
 pitch = np.deg2rad(45.0)
 
-tilts = [0.0, 59.0]
-labels = ["0° — aligned dipole\n(symmetric bounce)", "59° — Uranus-like\n(asymmetric bounce)"]
+tilts  = [0.0, 59.0]
+labels = ["0° — aligned dipole\n(symmetric bounce)",
+          "59° — Uranus-like\n(asymmetric bounce)"]
 colors = ["C0", "C2"]
 
 results = {}
@@ -47,27 +55,33 @@ for tilt in tilts:
     v_par_mag = abs(np.dot(v0, bhat))
     T_b_est   = 4.0 * L0 / v_par_mag
     dt        = min(T_b_est / 400.0, 0.05 * T_gyro)
-    T_run     = 3.5 * T_b_est
+    T_run     = 5.0 * T_b_est          # 5 bounces — pattern repeats clearly
     nsteps    = int(T_run / dt) + 1
 
     print(f"Tilt {tilt:.0f}°: T_gyro={T_gyro:.3f}, T_b={T_b_est:.2f}, nsteps={nsteps}")
-    t, traj   = simulate_orbit_ivp(state0=state0, dt=dt, nsteps=nsteps,
-                                    q=q, m=m, E_func=E_zero, B_func=B_func,
-                                    rtol=1e-9, atol=1e-9)
-    skip_gc   = max(1, int(round(T_gyro / dt)))
-    gc        = extract_gc(traj, t, B_func, q=q, m=m)
-    gc_s      = gc[::skip_gc]
-    t_s       = t[::skip_gc]
+    t, traj = simulate_orbit_ivp(state0=state0, dt=dt, nsteps=nsteps,
+                                  q=q, m=m, E_func=E_zero, B_func=B_func,
+                                  rtol=1e-9, atol=1e-9)
 
-    results[tilt] = dict(t=t_s, gc=gc_s, B_func=B_func, theta=theta_rad,
+    # Use full (non-decimated) GC — smooth continuous path
+    gc = extract_gc(traj, t, B_func, q=q, m=m)
+
+    results[tilt] = dict(t=t, gc=gc, B_func=B_func, theta=theta_rad,
                          T_b=T_b_est)
 
 print("Done integrating.")
 
+# ---- Align time arrays ----
+gc_L = results[0.0]["gc"];   t_L = results[0.0]["t"]
+gc_R = results[59.0]["gc"];  t_R = results[59.0]["t"]
+N    = min(len(t_L), len(t_R))
+gc_L, t_L = gc_L[:N], t_L[:N]
+gc_R, t_R = gc_R[:N], t_R[:N]
+
 # ---- Precompute field lines for each tilt ----
-lam_fl   = np.linspace(-1.25, 1.25, 300)
-L_fl     = [2.0, 2.5, 3.0, 3.5]
-phi_fl   = np.linspace(0, 2 * np.pi, 8, endpoint=False)
+lam_fl = np.linspace(-1.25, 1.25, 300)
+L_fl   = [2.0, 2.5, 3.0, 3.5]
+phi_fl = np.linspace(0, 2 * np.pi, 8, endpoint=False)
 
 def tilted_field_lines(theta_r):
     cos_t, sin_t = np.cos(theta_r), np.sin(theta_r)
@@ -96,14 +110,25 @@ ax_R = fig.add_subplot(122, projection="3d")
 fig.suptitle("Tilted dipole: effect of magnetic axis tilt on particle bounce",
              fontsize=11, y=1.01)
 
+# Geographic equatorial ring (z=0) — makes the bounce asymmetry obvious
+theta_eq = np.linspace(0, 2 * np.pi, 120)
+r_eq     = 3.8   # slightly outside orbit so it doesn't overlap
+
 for ax, fl_lines, tilt, label, col in zip(
         [ax_L, ax_R], [fl_left, fl_right], tilts, labels, colors):
 
     for xg, yg, zg in fl_lines:
-        ax.plot(xg, yg, zg, color="steelblue", lw=0.4, alpha=0.18)
+        ax.plot(xg, yg, zg, color="#555555", lw=0.5, alpha=0.35)
+
+    # Geographic equatorial plane ring (z = 0)
+    ax.plot(r_eq * np.cos(theta_eq), r_eq * np.sin(theta_eq),
+            np.zeros(120), color="#aaaaaa", lw=1.0, alpha=0.6,
+            linestyle="--", zorder=2)
+    ax.text(r_eq + 0.15, 0, 0, "z = 0", fontsize=7,
+            color="#888888", alpha=0.8)
 
     # Planet sphere
-    u_s = np.linspace(0, 2*np.pi, 20)
+    u_s = np.linspace(0, 2 * np.pi, 20)
     v_s = np.linspace(0, np.pi, 14)
     ax.plot_surface(
         np.outer(np.cos(u_s), np.sin(v_s)),
@@ -123,8 +148,19 @@ for ax, fl_lines, tilt, label, col in zip(
     ax.set_title(label, fontsize=9, pad=2)
     ax.view_init(elev=20, azim=-60)
 
-# Animated artists
-TRAIL    = 80
+# Static full GC path — shows the complete bounce envelope before animation starts.
+# Faint so the animated trail reads on top of it clearly.
+ax_L.plot(gc_L[:, 0], gc_L[:, 1], gc_L[:, 2],
+          lw=0.7, alpha=0.20, color="C0", linestyle="-")
+ax_R.plot(gc_R[:, 0], gc_R[:, 1], gc_R[:, 2],
+          lw=0.7, alpha=0.20, color="C2", linestyle="-")
+
+# ---- Animated artists ----
+# TRAIL sized to cover roughly one full bounce in animation frames.
+# With N_FRAMES=200 over 5 bounces, one bounce ≈ 40 frames → TRAIL=50.
+N_FRAMES = 200
+skip     = max(1, N // N_FRAMES)
+TRAIL    = max(50, N_FRAMES // 5)   # ~1 bounce worth of trail
 
 trail_L, = ax_L.plot([], [], [], lw=1.8, color="C0")
 dot_L,   = ax_L.plot([], [], [], "o", color="C0", ms=7, zorder=10)
@@ -132,19 +168,8 @@ trail_R, = ax_R.plot([], [], [], lw=1.8, color="C2")
 dot_R,   = ax_R.plot([], [], [], "o", color="C2", ms=7, zorder=10)
 time_txt = fig.text(0.5, 0.01, "", ha="center", fontsize=9)
 
-# Align time arrays to same length
-gc_L  = results[0.0]["gc"];   t_L  = results[0.0]["t"]
-gc_R  = results[59.0]["gc"];  t_R  = results[59.0]["t"]
-N     = min(len(t_L), len(t_R))
-gc_L, t_L = gc_L[:N], t_L[:N]
-gc_R, t_R = gc_R[:N], t_R[:N]
-
-N_FRAMES = 200
-skip     = max(1, N // N_FRAMES)
-
 def update(frame):
-    i  = frame * skip
-    i  = min(i, N - 1)
+    i  = min(frame * skip, N - 1)
     i0 = max(0, i - TRAIL)
 
     trail_L.set_data(gc_L[i0:i, 0], gc_L[i0:i, 1])
@@ -164,6 +189,7 @@ n_anim = min(N_FRAMES, N // skip)
 anim = animation.FuncAnimation(fig, update, frames=n_anim,
                                 interval=55, blit=False)
 
+fig.tight_layout()
 out = "../Figures/animate14_tilted.gif"
 print(f"Saving {out} ...")
 anim.save(out, writer="pillow", fps=18, dpi=120)

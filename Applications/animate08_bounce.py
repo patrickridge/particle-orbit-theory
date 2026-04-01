@@ -84,7 +84,7 @@ for phi_f in phi_fl:
         zf   = r_fl * np.sin(lam_fl)
         below = (xf ** 2 + yf ** 2 + zf ** 2) < 1.02 ** 2
         xf[below] = np.nan; yf[below] = np.nan; zf[below] = np.nan
-        ax.plot(xf, yf, zf, color="steelblue", lw=0.4, alpha=0.18)
+        ax.plot(xf, yf, zf, color="steelblue", lw=0.4, alpha=0.28)
 
 # Planet sphere
 u_s = np.linspace(0, 2 * np.pi, 30)
@@ -103,27 +103,16 @@ trail_gc,   = ax.plot([], [], [], lw=1.6, color="C1")
 dot_part,   = ax.plot([], [], [], "o", color="C0", ms=5,  zorder=10, label="Particle")
 dot_gc_pt,  = ax.plot([], [], [], "s", color="C1", ms=6,  zorder=10, label="Guiding centre")
 
-# Mirror point flash (bright green, hidden when not near mirror)
-mirror_flash, = ax.plot([], [], [], "o", color="limegreen", ms=14,
-                         zorder=12, alpha=0, label="Mirror point!")
-
 time_txt = ax.text2D(0.02, 0.96, "", transform=ax.transAxes, fontsize=9)
 
-# Static timescale panel
-timescale_str = (
-    f"Timescales\n"
-    f"T_gyro   = {T_gyro:.2f}\n"
-    f"T_bounce ≈ {T_b_est:.1f}\n"
-    f"T_drift  ≈ {T_drift:.0f}\n"
-    f"T_drift/T_Neptune ≈ {ratio_drift:.2e}"
-)
-ax.text2D(0.02, 0.78, timescale_str, transform=ax.transAxes, fontsize=8,
-          verticalalignment="top",
+ax.text2D(0.02, 0.78,
+          r"$T_{\rm gyro} \ll T_{\rm bounce} \ll T_{\rm drift}$",
+          transform=ax.transAxes, fontsize=10, verticalalignment="top",
           bbox=dict(boxstyle="round,pad=0.3", fc="white", alpha=0.75))
 
 ax.set_xlim(-4.5, 4.5); ax.set_ylim(-4.5, 4.5); ax.set_zlim(-3.0, 3.0)
 ax.set_xlabel("x"); ax.set_ylabel("y"); ax.set_zlabel("z")
-ax.set_title(f"Particle orbit in dipole field  (M={M})\n"
+ax.set_title(f"Particle orbit in dipole field \n"
              "Gyration · Bounce · Azimuthal drift", fontsize=10)
 ax.legend(fontsize=8, loc="upper right")
 
@@ -148,21 +137,11 @@ def update(frame):
     dot_gc_pt.set_data([gc[i, 0]], [gc[i, 1]])
     dot_gc_pt.set_3d_properties([gc[i, 2]])
 
-    # Flash mirror dot if near a turning point
-    t_now = t[i]
-    near = any(abs(t_now - mt) < 0.8 * T_gyro for mt in mirror_t)
-    if near:
-        mirror_flash.set_data([gc[i, 0]], [gc[i, 1]])
-        mirror_flash.set_3d_properties([gc[i, 2]])
-        mirror_flash.set_alpha(0.9)
-    else:
-        mirror_flash.set_alpha(0)
-
     # Slowly rotate camera
     ax.view_init(elev=25, azim=-50 + frame * 0.8)
 
     time_txt.set_text(f"t = {t[i]:.1f}  /  T_bounce ≈ {T_b_est:.0f}")
-    return trail_full, trail_gc, dot_part, dot_gc_pt, mirror_flash, time_txt
+    return trail_full, trail_gc, dot_part, dot_gc_pt, time_txt
 
 n_anim = min(N_FRAMES, len(t) // skip)
 anim = animation.FuncAnimation(fig, update, frames=n_anim,
