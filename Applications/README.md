@@ -231,18 +231,30 @@ Side-by-side 3D subplots showing 0° (aligned, symmetric bounce) and 59° (Uranu
 
 ---
 
-## animate15_corotation — Corotation E×B drift animation
+## animate_earth_corotation — Corotation teaching figure (presentation version)
 
-Top-down (x-y) comparison: left panel shows GC drift with no E field (slow, gradient+curvature only, Ω ≈ 0.008); right panel shows GC with the corotation E field (Ω ≈ 0.028). A red rotating arm in the right panel shows the nominal planetary rotation rate Ω = 0.02. The GC is slightly ahead of the arm because gradient drift adds to the E×B contribution — this is physical, not a numerical error.
+Single top-down panel. One physics message: the corotation E×B drift locks the guiding centre to the rotating planet arm; magnetic drifts advance it slightly ahead.
 
-**Key physics note:** The E×B drift alone gives exact co-rotation at Ω. The measured total drift exceeds Ω because gradient+curvature drift (always present) contributes an extra ~0.008. "Particle co-rotates with the planet" is therefore an approximation valid when gradient drift is small relative to E×B.
+Two animated elements:
+- **Crimson dot** — pure corotation reference, stays exactly on the rotating arm (analytic: position = L(cos Ωt, sin Ωt))
+- **Orange dot** — full GC from simulation (E×B + gradient + curvature); drifts ahead of arm
 
-**Output:** `animate15_corotation.gif` — for slide 10 (Rotating magnetosphere).
+The growing angular gap between the two dots is the magnetic drift contribution. Labels are placed directly on the figure; no legend box.
+
+**Output:** `animate_earth_corotation.gif` — primary presentation figure for corotation slide.
+
+---
+
+## animate15_corotation — Corotation comparison (original version)
+
+Single top-down panel comparing two simulation runs: with and without the corotation E field. Shows both GC trails simultaneously; grey = magnetic drift only (Ω ≈ 0.008), orange = full drift with E field (Ω ≈ 0.027). Red rotating arm shows planet rotation at Ω = 0.02.
+
+**Output:** `animate15_corotation.gif`
 
 ---
 
 ## animate16_rotating — Rotating tilted dipole animation
 
-Full 3D animation of the test16 scenario over one complete planetary rotation. The tilted dipole field lines rotate with the planet (each frame applies a z-axis rotation by Ωt). The magnetic axis arrow rotates accordingly. The GC trail uses the plasma colourmap (dark = early, bright = current). A prominent label shows the elapsed percentage of the corotation period.
+3D animation of the test16 scenario over one complete planetary rotation. Eight field lines (two L-shells, four azimuths) rotate with the planet. The GC trail uses the plasma colourmap (dark purple = early, bright yellow = recent) so the direction of motion reads directly from the colour. The crimson magnetic axis arrow rotates at Ω; the grey rotation axis is fixed. A small horizontal colorbar (top right) labels the time axis. Tilt angle shown on the magnetic axis label.
 
-**Output:** `animate16_rotating.gif` — for slide 10/11 (Rotating magnetosphere).
+**Output:** `animate16_rotating.gif` — presentation figure for rotating tilted dipole slide.

@@ -1,3 +1,4 @@
+import os
 import time
 import numpy as np
 import matplotlib.pyplot as plt
@@ -6,6 +7,10 @@ from scipy.optimize import brentq
 
 from orbit_ivp_core import simulate_orbit_ivp, extract_gc
 from fields import E_zero, B_dipole_cartesian
+
+# Figures directory — resolved relative to this script, so the script runs correctly from any working directory.
+_FIG = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "Figures")
+os.makedirs(_FIG, exist_ok=True)
 
 sns.set_theme(style="ticks", context="paper")
 
@@ -210,7 +215,7 @@ ax.set_title(
 ax.legend(frameon=True, fontsize=8)
 sns.despine()
 plt.tight_layout()
-plt.savefig("../Figures/test13_SI_z_vs_t.png", dpi=300)
+plt.savefig(os.path.join(_FIG, "test13_SI_z_vs_t.png"), dpi=300)
 plt.show()
 
 # ======================================================================
@@ -233,7 +238,7 @@ ax.set_title(
 ax.legend(frameon=True, fontsize=8)
 sns.despine()
 plt.tight_layout()
-plt.savefig("../Figures/test13_SI_vpar_vs_t.png", dpi=300)
+plt.savefig(os.path.join(_FIG, "test13_SI_vpar_vs_t.png"), dpi=300)
 plt.show()
 
 # ======================================================================
@@ -252,5 +257,5 @@ ax.set_title(
 ax.legend(frameon=True, fontsize=8)
 sns.despine()
 plt.tight_layout()
-plt.savefig("../Figures/test13_SI_mu_error.png", dpi=300)
+plt.savefig(os.path.join(_FIG, "test13_SI_mu_error.png"), dpi=300)
 plt.show()

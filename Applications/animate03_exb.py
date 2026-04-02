@@ -1,3 +1,4 @@
+import os
 """
 animate03_exb.py
 ================
@@ -13,6 +14,10 @@ import matplotlib.animation as animation
 
 from orbit_ivp_core import simulate_orbit_ivp, q, m
 from fields import E_const, B_uniform_z
+
+# Figures directory — resolved relative to this script.
+_FIG = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "Figures")
+os.makedirs(_FIG, exist_ok=True)
 
 # ---- Parameters ----
 B0, E0 = 1.0, 0.2
@@ -102,7 +107,7 @@ n_anim = min(N_FRAMES, len(t) // skip)
 anim = animation.FuncAnimation(fig, update, frames=n_anim,
                                 interval=55, blit=False)
 
-out = "../Figures/animate03_exb.gif"
+out = os.path.join(_FIG, "animate03_exb.gif")
 print(f"Saving {out} ...")
 anim.save(out, writer="pillow", fps=18, dpi=120)
 print("Done.")

@@ -1,9 +1,14 @@
+import os
 import numpy as np
 import matplotlib.pyplot as plt
 import seaborn as sns
 
 from orbit_ivp_core import simulate_orbit_ivp, q, m
 from fields import E_zero, B_mirror_div_free
+
+# Figures directory — resolved relative to this script, so the script runs correctly from any working directory.
+_FIG = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "Figures")
+os.makedirs(_FIG, exist_ok=True)
 
 sns.set_theme(style="ticks", context="paper")
 
@@ -74,7 +79,7 @@ ax.set_title("Test 5: Mirror-like field — bounce motion (turning points)")
 ax.legend(fontsize=8, frameon=True)
 sns.despine()
 plt.tight_layout()
-plt.savefig("Figures/test05_mirror_z_turning.png", dpi=300)
+plt.savefig(os.path.join(_FIG, "test05_mirror_z_turning.png"), dpi=300)
 plt.show()
 
 # --- Plot 2: energy conservation ---
@@ -86,5 +91,5 @@ ax.set_ylabel(r"$|(K(t)-K(0))/K(0)|$")
 ax.set_title("Test 5: Energy conservation (E=0)")
 sns.despine()
 plt.tight_layout()
-plt.savefig("Figures/test05_mirror_energy_drift.png", dpi=300)
+plt.savefig(os.path.join(_FIG, "test05_mirror_energy_drift.png"), dpi=300)
 plt.show()

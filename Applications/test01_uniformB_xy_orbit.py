@@ -1,3 +1,4 @@
+import os
 import numpy as np
 import matplotlib.pyplot as plt
 import seaborn as sns
@@ -6,6 +7,10 @@ sns.set_theme(style="ticks", context="paper")
 
 from orbit_ivp_core import simulate_orbit_ivp, q, m
 from fields import E_zero, B_uniform_z
+
+# Figures directory — resolved relative to this script, so the script runs correctly from any working directory.
+_FIG = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "Figures")
+os.makedirs(_FIG, exist_ok=True)
 
 # =============================================================
 # Test 1: Circular gyromotion in a uniform magnetic field
@@ -73,5 +78,5 @@ ax.legend(frameon=True, fontsize=8)
 
 sns.despine()
 plt.tight_layout()
-plt.savefig("Figures/test01_uniformB_xy.png", dpi=300)
+plt.savefig(os.path.join(_FIG, "test01_uniformB_xy.png"), dpi=300)
 plt.show()

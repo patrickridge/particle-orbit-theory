@@ -1,3 +1,4 @@
+import os
 import numpy as np
 import matplotlib.pyplot as plt
 import seaborn as sns
@@ -7,6 +8,10 @@ from matplotlib import cm
 
 from orbit_ivp_core import simulate_orbit_ivp, extract_gc
 from fields import B_dipole_rotating, E_corotation
+
+# Figures directory — resolved relative to this script, so the script runs correctly from any working directory.
+_FIG = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "Figures")
+os.makedirs(_FIG, exist_ok=True)
 
 sns.set_theme(style="ticks", context="paper")
 
@@ -172,7 +177,7 @@ ax1.set_title(
 ax1.legend(fontsize=8, loc="upper left")
 
 plt.tight_layout()
-plt.savefig("../Figures/test16_rotating_dipole_3D.png", dpi=300)
+plt.savefig(os.path.join(_FIG, "test16_rotating_dipole_3D.png"), dpi=300)
 plt.close()
 print("Saved test16_rotating_dipole_3D.png")
 
@@ -190,7 +195,7 @@ ax2.set_title(
 )
 sns.despine()
 plt.tight_layout()
-plt.savefig("../Figures/test16_rotating_dipole_z_vs_t.png", dpi=300)
+plt.savefig(os.path.join(_FIG, "test16_rotating_dipole_z_vs_t.png"), dpi=300)
 plt.close()
 print("Saved test16_rotating_dipole_z_vs_t.png")
 
@@ -227,7 +232,7 @@ ax_bot.set_ylabel("residual from\nbest-fit (rad)")
 
 sns.despine()
 plt.tight_layout()
-plt.savefig("../Figures/test16_rotating_dipole_phi_vs_t.png", dpi=300)
+plt.savefig(os.path.join(_FIG, "test16_rotating_dipole_phi_vs_t.png"), dpi=300)
 plt.close()
 print("Saved test16_rotating_dipole_phi_vs_t.png")
 
@@ -262,7 +267,7 @@ ax4.set_title(
 ax4.legend(fontsize=8)
 sns.despine()
 plt.tight_layout()
-plt.savefig("../Figures/test16_rotating_dipole_xy.png", dpi=300)
+plt.savefig(os.path.join(_FIG, "test16_rotating_dipole_xy.png"), dpi=300)
 plt.close()
 print("Saved test16_rotating_dipole_xy.png")
 

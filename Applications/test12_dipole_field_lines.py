@@ -1,7 +1,12 @@
+import os
 import numpy as np
 import matplotlib.pyplot as plt
 import matplotlib.patches as mpatches
 import seaborn as sns
+
+# Figures directory — resolved relative to this script, so the script runs correctly from any working directory.
+_FIG = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "Figures")
+os.makedirs(_FIG, exist_ok=True)
 
 sns.set_theme(style="ticks", context="paper")
 
@@ -89,5 +94,5 @@ ax.legend(handles=[earth_patch], frameon=True, loc="upper right", fontsize=8)
 
 sns.despine()
 plt.tight_layout()
-plt.savefig("Figures/test12_dipole_field_lines.png", dpi=300)
+plt.savefig(os.path.join(_FIG, "test12_dipole_field_lines.png"), dpi=300)
 plt.show()

@@ -1,3 +1,4 @@
+import os
 import numpy as np
 import matplotlib.pyplot as plt
 import seaborn as sns
@@ -7,6 +8,10 @@ from scipy.interpolate import interp1d
 from orbit_ivp_core import simulate_orbit_ivp, extract_gc
 from guiding_centre import simulate_gc_orbit
 from fields import E_zero, B_dipole_cartesian
+
+# Figures directory — resolved relative to this script, so the script runs correctly from any working directory.
+_FIG = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "Figures")
+os.makedirs(_FIG, exist_ok=True)
 
 sns.set_theme(style="ticks", context="paper")
 
@@ -167,7 +172,7 @@ ax.set_title(f"Test 11: z(t) — Full orbit, extracted GC, and GC equations\n"
 ax.legend(frameon=True, fontsize=8)
 sns.despine()
 plt.tight_layout()
-plt.savefig("../Figures/test11_gc_vs_full_z.png", dpi=300)
+plt.savefig(os.path.join(_FIG, "test11_gc_vs_full_z.png"), dpi=300)
 plt.show()
 
 # ======================================================================
@@ -185,7 +190,7 @@ ax.legend(frameon=True)
 ax.set_aspect("equal")
 sns.despine()
 plt.tight_layout()
-plt.savefig("../Figures/test11_gc_vs_full_xy.png", dpi=300)
+plt.savefig(os.path.join(_FIG, "test11_gc_vs_full_xy.png"), dpi=300)
 plt.show()
 
 # ======================================================================
@@ -206,7 +211,7 @@ ax.set_title("Test 11: Separation — orbit vs GC equations\n"
 ax.legend(frameon=True, fontsize=8)
 sns.despine()
 plt.tight_layout()
-plt.savefig("../Figures/test11_separation.png", dpi=300)
+plt.savefig(os.path.join(_FIG, "test11_separation.png"), dpi=300)
 plt.show()
 
 # ======================================================================
@@ -224,7 +229,7 @@ ax.set_title(r"Test 11: $v_\parallel$ — Full orbit vs GC")
 ax.legend(frameon=True)
 sns.despine()
 plt.tight_layout()
-plt.savefig("../Figures/test11_vpar_comparison.png", dpi=300)
+plt.savefig(os.path.join(_FIG, "test11_vpar_comparison.png"), dpi=300)
 plt.show()
 
 # ======================================================================
@@ -240,5 +245,5 @@ ax.set_title(r"Test 11: Adiabatic invariant $\mu$ conservation (full orbit)")
 ax.legend(frameon=True, fontsize=8)
 sns.despine()
 plt.tight_layout()
-plt.savefig("../Figures/test11_mu_conservation.png", dpi=300)
+plt.savefig(os.path.join(_FIG, "test11_mu_conservation.png"), dpi=300)
 plt.show()

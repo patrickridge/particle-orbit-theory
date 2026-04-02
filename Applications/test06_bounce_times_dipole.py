@@ -1,9 +1,14 @@
+import os
 import numpy as np
 import matplotlib.pyplot as plt
 import seaborn as sns
 from scipy.integrate import quad
 from scipy.optimize import brentq
 import pandas as pd
+
+# Figures directory — resolved relative to this script, so the script runs correctly from any working directory.
+_FIG = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "Figures")
+os.makedirs(_FIG, exist_ok=True)
 
 sns.set_theme(style="ticks", context="paper")
 
@@ -84,7 +89,7 @@ ax.set_title("10 keV Electron Bounce Periods — Earth's Dipole Field")
 ax.legend(frameon=True, loc="upper left")
 sns.despine()
 plt.tight_layout()
-plt.savefig("Figures/test06_bounce_times.png", dpi=300)
+plt.savefig(os.path.join(_FIG, "test06_bounce_times.png"), dpi=300)
 plt.show()
 
 # ======================================================================
@@ -101,7 +106,7 @@ ax.set_ylabel(r"Bounce period $\tau_b$ (s)")
 ax.set_title(fr"Bounce period vs pitch angle  ($L={L_fixed}$, 10 keV $e^-$)")
 sns.despine()
 plt.tight_layout()
-plt.savefig("Figures/test06_bounce_vs_pitch.png", dpi=300)
+plt.savefig(os.path.join(_FIG, "test06_bounce_vs_pitch.png"), dpi=300)
 plt.show()
 
 # ---- Save table -------------------------------------------------------

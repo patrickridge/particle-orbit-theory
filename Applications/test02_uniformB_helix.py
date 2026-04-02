@@ -1,3 +1,4 @@
+import os
 import numpy as np
 import matplotlib.pyplot as plt
 import seaborn as sns
@@ -6,6 +7,10 @@ sns.set_theme(style="ticks", context="paper")
 
 from orbit_ivp_core import simulate_orbit_ivp, q, m
 from fields import E_zero, B_uniform_z
+
+# Figures directory — resolved relative to this script, so the script runs correctly from any working directory.
+_FIG = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "Figures")
+os.makedirs(_FIG, exist_ok=True)
 
 # =============================================================
 # Test 2: Helical motion in a uniform magnetic field
@@ -57,7 +62,7 @@ ax.set_title("Test 2: Uniform B — linear motion along field line")
 ax.legend(frameon=True, fontsize=8)
 sns.despine()
 plt.tight_layout()
-plt.savefig("Figures/test02_uniformB_z.png", dpi=300)
+plt.savefig(os.path.join(_FIG, "test02_uniformB_z.png"), dpi=300)
 plt.show()
 
 # ======================================================================
@@ -80,7 +85,7 @@ ax.set_title("Test 2: Uniform B — x-y projection (gyromotion)")
 ax.legend(frameon=True, fontsize=8)
 sns.despine()
 plt.tight_layout()
-plt.savefig("Figures/test02_uniformB_xy.png", dpi=300)
+plt.savefig(os.path.join(_FIG, "test02_uniformB_xy.png"), dpi=300)
 plt.show()
 '''
 # ======================================================================
@@ -95,5 +100,5 @@ ax.set_zlabel("z")
 ax.set_title("Test 2: Helical motion in uniform B field")
 ax.set_box_aspect((1, 1, 2))
 plt.tight_layout()
-plt.savefig("Figures/test02_uniformB_helix_3D.png", dpi=300)
+plt.savefig(os.path.join(_FIG, "test02_uniformB_helix_3D.png"), dpi=300)
 plt.show()

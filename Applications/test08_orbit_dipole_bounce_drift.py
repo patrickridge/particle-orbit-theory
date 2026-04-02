@@ -1,3 +1,4 @@
+import os
 import numpy as np
 import matplotlib.pyplot as plt
 import seaborn as sns
@@ -5,6 +6,10 @@ from mpl_toolkits.mplot3d import Axes3D  # noqa: F401
 
 from orbit_ivp_core import simulate_orbit_ivp, extract_gc
 from fields import E_zero, B_dipole_cartesian
+
+# Figures directory — resolved relative to this script, so the script runs correctly from any working directory.
+_FIG = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "Figures")
+os.makedirs(_FIG, exist_ok=True)
 
 sns.set_theme(style="ticks", context="paper")
 
@@ -114,7 +119,7 @@ ax.set_title(
 ax.legend(frameon=True)
 sns.despine()
 plt.tight_layout()
-plt.savefig("../Figures/test08_dipole_z_vs_t.png", dpi=300)
+plt.savefig(os.path.join(_FIG, "test08_dipole_z_vs_t.png"), dpi=300)
 plt.show()
 
 # ======================================================================
@@ -127,7 +132,7 @@ ax.set_xlabel("t"); ax.set_ylabel(r"$v_\parallel$")
 ax.set_title(r"Test 8: $v_\parallel$ reverses sign at mirror points")
 sns.despine()
 plt.tight_layout()
-plt.savefig("../Figures/test08_dipole_vpar_vs_t.png", dpi=300)
+plt.savefig(os.path.join(_FIG, "test08_dipole_vpar_vs_t.png"), dpi=300)
 plt.show()
 
 # ======================================================================
@@ -151,7 +156,7 @@ axes[1].legend(frameon=True, fontsize=8)
 
 sns.despine()
 plt.tight_layout()
-plt.savefig("../Figures/test08_dipole_mu_conservation.png", dpi=300)
+plt.savefig(os.path.join(_FIG, "test08_dipole_mu_conservation.png"), dpi=300)
 plt.show()
 
 # ======================================================================
@@ -166,7 +171,7 @@ ax.set_title("Test 8: Kinetic energy conservation (E = 0)")
 ax.legend(frameon=True, fontsize=8)
 sns.despine()
 plt.tight_layout()
-plt.savefig("../Figures/test08_dipole_energy_drift.png", dpi=300)
+plt.savefig(os.path.join(_FIG, "test08_dipole_energy_drift.png"), dpi=300)
 plt.show()
 
 # ======================================================================
@@ -214,5 +219,5 @@ ax.set_title(f"Test 8: 3D orbit in dipole field (1.5 bounce periods)\n"
 ax.view_init(elev=25, azim=-50)
 ax.legend(fontsize=8)
 plt.tight_layout()
-plt.savefig("../Figures/test08_dipole_orbit_3D.png", dpi=300)
+plt.savefig(os.path.join(_FIG, "test08_dipole_orbit_3D.png"), dpi=300)
 plt.show()

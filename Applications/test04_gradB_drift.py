@@ -1,9 +1,14 @@
+import os
 import numpy as np
 import matplotlib.pyplot as plt
 import seaborn as sns
 
 from orbit_ivp_core import simulate_orbit_ivp, q, m
 from fields import E_zero, B_gradx_z
+
+# Figures directory — resolved relative to this script, so the script runs correctly from any working directory.
+_FIG = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "Figures")
+os.makedirs(_FIG, exist_ok=True)
 
 sns.set_theme(style="ticks", context="paper")
 
@@ -65,9 +70,9 @@ ax.set_xlabel("x"); ax.set_ylabel("y")
 ax.set_title("Test 4: Grad-B — raw orbit (note varying gyroradius)")
 sns.despine()
 plt.tight_layout()
-plt.savefig("Figures/test04_gradB_xy_raw.png", dpi=300)
+plt.savefig(os.path.join(_FIG, "test04_gradB_xy_raw.png"), dpi=300)
 plt.show()
-'''
+
 # ======================================================================
 # Plot 2: Guiding-centre path (gyro-averaged x-y)
 # ======================================================================
@@ -78,7 +83,7 @@ ax.set_title("Test 4: Grad-B drift — guiding-centre trajectory")
 ax.legend(frameon=True)
 sns.despine()
 plt.tight_layout()
-plt.savefig("Figures/test04_gradB_gc_xy.png", dpi=300)
+plt.savefig(os.path.join(_FIG, "test04_gradB_gc_xy.png"), dpi=300)
 plt.show()
 
 # ======================================================================
@@ -105,6 +110,5 @@ axes[1].set_title("Residual: gyro-avg − theory")
 
 sns.despine()
 plt.tight_layout()
-plt.savefig("Figures/test04_gradB_y_vs_t.png", dpi=300)
+plt.savefig(os.path.join(_FIG, "test04_gradB_y_vs_t.png"), dpi=300)
 plt.show()
-'''

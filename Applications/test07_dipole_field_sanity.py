@@ -1,8 +1,13 @@
+import os
 import numpy as np
 import matplotlib.pyplot as plt
 import seaborn as sns
 
 from fields import B_dipole_cartesian, dipole_B_magnitude_on_axis
+
+# Figures directory — resolved relative to this script, so the script runs correctly from any working directory.
+_FIG = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "Figures")
+os.makedirs(_FIG, exist_ok=True)
 
 sns.set_theme(style="ticks", context="paper")
 
@@ -38,7 +43,7 @@ ax.set_title("Test 7: Dipole field — on-axis magnitude scaling")
 ax.legend(frameon=True)
 sns.despine()
 plt.tight_layout()
-plt.savefig("Figures/test07_dipole_axis_scaling.png", dpi=300)
+plt.savefig(os.path.join(_FIG, "test07_dipole_axis_scaling.png"), dpi=300)
 plt.show()
 
 # ======================================================================
@@ -88,5 +93,5 @@ ax.set_title("Test 7: Dipole field directions in x–z plane (y = 0)")
 ax.set_aspect("equal")
 sns.despine()
 plt.tight_layout()
-plt.savefig("Figures/test07_dipole_quiver_xz.png", dpi=300)
+plt.savefig(os.path.join(_FIG, "test07_dipole_quiver_xz.png"), dpi=300)
 plt.show()

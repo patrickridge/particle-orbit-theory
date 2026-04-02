@@ -1,3 +1,4 @@
+import os
 import numpy as np
 import matplotlib.pyplot as plt
 import seaborn as sns
@@ -6,6 +7,10 @@ from scipy.optimize import brentq
 
 from orbit_ivp_core import simulate_orbit_ivp
 from fields import E_zero, B_dipole_cartesian
+
+# Figures directory — resolved relative to this script, so the script runs correctly from any working directory.
+_FIG = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "Figures")
+os.makedirs(_FIG, exist_ok=True)
 
 sns.set_theme(style="ticks", context="paper")
 
@@ -20,7 +25,7 @@ sns.set_theme(style="ticks", context="paper")
 # ---- Dimensionless parameters matching orbit code -------------------
 q   = 1.0
 m   = 1.0
-M   = 5.0     # dipole moment (sets field strength)
+M   = 500.0   # dipole moment — matches test08/11 (M=5 was non-adiabatic: T_b/T_gyro < 1)
 
 # Equatorial |B| at r = r_eq is |B_eq| = M/r_eq^3 (on-axis formula)
 # For a particle starting at r_eq = 3 (code units), B_eq ≈ M/r_eq^3
@@ -137,7 +142,7 @@ ax.set_title(f"Test 10: Bounce motion — "
 ax.legend(frameon=True)
 sns.despine()
 plt.tight_layout()
-plt.savefig("Figures/test10_bounce_period_check.png", dpi=300)
+plt.savefig(os.path.join(_FIG, "test10_bounce_period_check.png"), dpi=300)
 plt.show()
 
 # ======================================================================
@@ -153,7 +158,7 @@ ax.set_xlabel("t"); ax.set_ylabel(r"$v_\parallel$")
 ax.set_title(r"Test 10: $v_\parallel$ reversal at mirror points")
 sns.despine()
 plt.tight_layout()
-plt.savefig("Figures/test10_bounce_vpar.png", dpi=300)
+plt.savefig(os.path.join(_FIG, "test10_bounce_vpar.png"), dpi=300)
 plt.show()
 
 # ======================================================================
@@ -176,5 +181,5 @@ ax.set_title("Test 10: Bounce period vs pitch angle")
 ax.legend(frameon=True)
 sns.despine()
 plt.tight_layout()
-plt.savefig("Figures/test10_bounce_vs_pitch.png", dpi=300)
+plt.savefig(os.path.join(_FIG, "test10_bounce_vs_pitch.png"), dpi=300)
 plt.show()

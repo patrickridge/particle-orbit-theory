@@ -36,19 +36,24 @@ Applications/           Core modules and test scripts (run from here)
   fields.py             Canonical field library (uniform, dipole, mirror, ...)
   guiding_centre.py     Guiding-centre equations of motion (all three drifts)
   test01_*.py  ...      Test scripts — see Applications/README.md for descriptions
-  animate02_helix.py    Animation: helical orbit in uniform B (rotating camera)
-  animate03_exb.py      Animation: E×B cycloid drift vs no-drift comparison
-  animate05_mirror.py   Animation: magnetic mirror bounce with mirror-point flash
-  animate08_bounce.py   Animation: all three dipole motions (rotating camera)
-  animate14_tilted.py   Animation: side-by-side 0° vs 59° asymmetric bounce
-  animate15_corotation.py  Animation: co-rotation comparison (with/without E field)
-  animate16_rotating.py    Animation: full rotating tilted magnetosphere
+  animate02_helix.py         Animation: helical orbit in uniform B
+  animate03_exb.py           Animation: E×B cycloid drift vs no-drift
+  animate05_mirror.py        Animation: magnetic mirror bounce
+  animate08_bounce.py        Animation: all three dipole motions
+  animate14a_aligned.py      Animation: aligned dipole bounce (0°)
+  animate14b_tilted.py       Animation: tilted dipole bounce (59°)
+  animate14_combined.py      Animation: side-by-side 0° vs 59° comparison
+  animate_earth_corotation.py  Animation: corotation vs full drift (Earth-inspired)
+  animate15_corotation.py    Animation: corotation comparison (with/without E field)
+  animate16_rotating.py      Animation: rotating tilted magnetosphere (plasma trail)
 
-Results/                Analytic scripts and output CSVs (run from project root)
-  g_bounce_times.py     Analytic bounce periods for 10 keV electrons
+Results/                Saved outputs (run from Applications/ directory)
+  test06_bounce_times.csv    Analytic bounce periods for 10 keV electrons vs L and pitch
+  validation_summary.md      Key quantitative validation results — update after each run
 
-Figures/                Auto-generated PNG and GIF output files (not tracked in git)
-Notes/                  Reference textbooks (not tracked in git)
+Figures/                Auto-generated PNG and GIF output (not tracked in git)
+                        Must exist before running scripts: mkdir Figures
+Notes/                  Physics notes and findings
 ```
 
 ---
@@ -74,13 +79,25 @@ python test11_gc_vs_full_orbit.py
 python test13_dipole_physical_units.py
 ```
 
-The analytic script in `Results/` is run from the project root:
+Figures are saved to `Figures/` relative to the working directory.
+The `Figures/` directory must exist — create it once with:
 
 ```bash
-python Results/g_bounce_times.py
+mkdir Figures
 ```
 
-Figures are saved to `Figures/` relative to the working directory.
+---
+
+## Validation
+
+Each test script prints quantitative comparisons (analytic vs numerical) to the terminal. Key results to record:
+
+- **test10**: bounce period error (typically < 1%)
+- **test11**: GC approximation error and μ conservation (typically < 0.1%)
+- **test13**: mirror latitude error and μ drift (SI units)
+- **test15**: corotation Ω recovery (typically ~96%)
+
+These numbers should be copied into `Results/validation_summary.md` after each run. The only automatically saved numeric output is `Results/test06_bounce_times.csv` (analytic bounce periods).
 
 ---
 

@@ -1,3 +1,4 @@
+import os
 import numpy as np
 import matplotlib.pyplot as plt
 import seaborn as sns
@@ -7,6 +8,10 @@ from matplotlib import cm
 
 from orbit_ivp_core import simulate_orbit_ivp, extract_gc
 from fields import E_zero, B_dipole_cartesian
+
+# Figures directory — resolved relative to this script, so the script runs correctly from any working directory.
+_FIG = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "Figures")
+os.makedirs(_FIG, exist_ok=True)
 
 # =============================================================
 # Test 14: Tilted dipole — planetary application
@@ -206,7 +211,7 @@ ax_r.legend(fontsize=8, loc="upper right")
 
 fig1.suptitle("Test 14: Dipole field lines — aligned vs tilted", fontsize=11)
 plt.tight_layout()
-plt.savefig("../Figures/test14_tilted_field_lines.png", dpi=300)
+plt.savefig(os.path.join(_FIG, "test14_tilted_field_lines.png"), dpi=300)
 plt.close()
 print("\nSaved test14_tilted_field_lines.png")
 
@@ -234,7 +239,7 @@ ax2.set_title("Test 14: Bounce motion — geographic z(t) for different dipole t
 ax2.legend(fontsize=9)
 sns.despine()
 plt.tight_layout()
-plt.savefig("../Figures/test14_z_vs_t_tilt_comparison.png", dpi=300)
+plt.savefig(os.path.join(_FIG, "test14_z_vs_t_tilt_comparison.png"), dpi=300)
 plt.close()
 print("Saved test14_z_vs_t_tilt_comparison.png")
 
@@ -261,7 +266,7 @@ ax_r.set_title("Test 14: Equatorial radius — GC confinement check")
 ax_r.legend(fontsize=9)
 sns.despine()
 plt.tight_layout()
-plt.savefig("../Figures/test14_r_xy_sanity.png", dpi=300)
+plt.savefig(os.path.join(_FIG, "test14_r_xy_sanity.png"), dpi=300)
 plt.close()
 print("Saved test14_r_xy_sanity.png")
 
@@ -339,7 +344,7 @@ ax3.set_title(f"Test 14: GC orbit — {tilt_show:.0f}° tilted dipole (Neptune-l
 ax3.legend(fontsize=8, loc="upper left")
 
 plt.tight_layout()
-plt.savefig("../Figures/test14_orbit_3D_tilted.png", dpi=300)
+plt.savefig(os.path.join(_FIG, "test14_orbit_3D_tilted.png"), dpi=300)
 plt.close()
 print("Saved test14_orbit_3D_tilted.png")
 

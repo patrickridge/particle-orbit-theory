@@ -1,3 +1,4 @@
+import os
 import numpy as np
 import matplotlib.pyplot as plt
 import seaborn as sns
@@ -6,6 +7,10 @@ from matplotlib import cm
 
 from orbit_ivp_core import simulate_orbit_ivp, extract_gc
 from fields import E_zero, E_corotation, B_dipole_cartesian
+
+# Figures directory — resolved relative to this script, so the script runs correctly from any working directory.
+_FIG = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "Figures")
+os.makedirs(_FIG, exist_ok=True)
 
 sns.set_theme(style="ticks", context="paper")
 
@@ -123,7 +128,7 @@ ax1.legend(fontsize=8, handles=[
 ])
 sns.despine()
 plt.tight_layout()
-plt.savefig("../Figures/test15_corotation_xy.png", dpi=300)
+plt.savefig(os.path.join(_FIG, "test15_corotation_xy.png"), dpi=300)
 plt.close()
 print("Saved test15_corotation_xy.png")
 
@@ -138,7 +143,7 @@ ax2.set_ylabel("z (code units)")
 ax2.set_title("Test 15: z(t) — bounce persists under co-rotation")
 sns.despine()
 plt.tight_layout()
-plt.savefig("../Figures/test15_corotation_z_vs_t.png", dpi=300)
+plt.savefig(os.path.join(_FIG, "test15_corotation_z_vs_t.png"), dpi=300)
 plt.close()
 print("Saved test15_corotation_z_vs_t.png")
 
@@ -162,7 +167,7 @@ ax_top.set_title("Test 15: Azimuthal drift — co-rotation vs gradient/curvature
 ax_top.legend(fontsize=9)
 sns.despine()
 plt.tight_layout()
-plt.savefig("../Figures/test15_corotation_phi_vs_t.png", dpi=300)
+plt.savefig(os.path.join(_FIG, "test15_corotation_phi_vs_t.png"), dpi=300)
 plt.close()
 print("Saved test15_corotation_phi_vs_t.png")
 

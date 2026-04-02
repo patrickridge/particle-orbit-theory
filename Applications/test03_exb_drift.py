@@ -1,9 +1,14 @@
+import os
 import numpy as np
 import matplotlib.pyplot as plt
 import seaborn as sns
 
 from orbit_ivp_core import simulate_orbit_ivp, q, m
 from fields import E_zero, E_const, B_uniform_z
+
+# Figures directory — resolved relative to this script, so the script runs correctly from any working directory.
+_FIG = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "Figures")
+os.makedirs(_FIG, exist_ok=True)
 
 sns.set_theme(style="ticks", context="paper")
 
@@ -79,7 +84,7 @@ ax.set_xlabel("x"); ax.set_ylabel("y"); ax.set_zlabel("z")
 ax.set_title("Test 3: E×B drift — 3D comparison")
 ax.legend(fontsize=8)
 plt.tight_layout()
-plt.savefig("Figures/test03_exb_3D_compare.png", dpi=300)
+plt.savefig(os.path.join(_FIG, "test03_exb_3D_compare.png"), dpi=300)
 plt.show()
 
 # ======================================================================
@@ -95,5 +100,5 @@ ax.set_aspect("equal")
 ax.legend(frameon=True)
 sns.despine()
 plt.tight_layout()
-plt.savefig("Figures/test03_exb_xy_projection.png", dpi=300)
+plt.savefig(os.path.join(_FIG, "test03_exb_xy_projection.png"), dpi=300)
 plt.show()
