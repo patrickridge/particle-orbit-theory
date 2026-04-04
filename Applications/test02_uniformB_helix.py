@@ -48,7 +48,7 @@ r_L    = m * v_perp / (q * B0)
 z_theory = v_par * t          # linear z(t)
 print(f"v_parallel (theory): {v_par}")
 print(f"Max |z_numerical - z_theory|: {np.max(np.abs(z - z_theory)):.2e}")
-'''
+
 # ======================================================================
 # Plot 1: z(t) — should be linear; overlay analytic line
 # ======================================================================
@@ -87,7 +87,7 @@ sns.despine()
 plt.tight_layout()
 plt.savefig(os.path.join(_FIG, "test02_uniformB_xy.png"), dpi=300)
 plt.show()
-'''
+
 # ======================================================================
 # Plot 3: 3D helix
 # ======================================================================
