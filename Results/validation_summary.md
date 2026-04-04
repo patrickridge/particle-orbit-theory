@@ -91,6 +91,23 @@ conservation (1.5%) is consistent with the phase error interpretation.
 
 ---
 
+## Tilted dipole (test14, M = 500, L = 3, pitch = 45°)
+
+Three runs: tilt = 0°, 47° (Neptune/Uranus-like), 59°. Parameters identical across runs.
+
+| Quantity | Value |
+|----------|-------|
+| T_gyro | 0.339 code time units |
+| T_b (analytic estimate) | 16.97 code time units |
+| T_b / T_gyro | 50 — well adiabatic |
+| dt | 0.01696 (= T_gyro / 20) |
+
+Key result: z(t) bounce motion is preserved across all three tilt angles — the particle
+still mirrors correctly. The equatorial crossing point shifts in 3D as the magnetic
+equator rotates with the dipole tilt, visible in test14_z_vs_t_tilt_comparison.png.
+
+---
+
 ## Corotation drift (test15, Ω = 0.02, M = 500, L = 3, pitch = 45°)
 
 | Run | Measured Ω | Explanation |
