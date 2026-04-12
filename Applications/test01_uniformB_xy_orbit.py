@@ -73,7 +73,7 @@ ax.plot(x_circle, y_circle, "k--", lw=1.0, label=fr"Theory ($r_L={r_L:.2f}$)")
 ax.set_aspect("equal", adjustable="box")
 ax.set_xlabel("x")
 ax.set_ylabel("y")
-ax.set_title("Test 1: Uniform B — circular gyromotion")
+ax.set_title("Circular gyromotion in uniform $B$", fontsize=11)
 ax.legend(frameon=True, fontsize=8)
 
 sns.despine()

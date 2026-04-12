@@ -121,7 +121,7 @@ plt.colorbar(sm, ax=ax1, label="t (code units)", shrink=0.8)
 ax1.set_aspect("equal")
 ax1.set_xlabel("x (code units)")
 ax1.set_ylabel("y (code units)")
-ax1.set_title(f"Test 15: Co-rotation — top-down view (Ω={Omega})")
+ax1.set_title(f"Co-rotation — top-down view (Ω={Omega})", fontsize=11)
 ax1.legend(fontsize=8, handles=[
     plt.Line2D([0],[0], color="gray", lw=1.5, label="GC trajectory (coloured by time)"),
     plt.Line2D([0],[0], color="k", lw=1.0, ls="--", label=f"Expected co-rotation (r={r0[0]:.1f})")
@@ -162,8 +162,8 @@ ax_top.plot(t_gc,     phi_theory, lw=1.2, color="k",  ls="--",
             label=f"Pure co-rotation: φ = Ωt  (Ω={Omega})")
 ax_top.set_xlabel("t (code units)")
 ax_top.set_ylabel("φ (rad)")
-ax_top.set_title("Test 15: Azimuthal drift — co-rotation vs gradient/curvature drift\n"
-                 "Gap between blue and dashed = gradient+curvature drift (physical, not error)")
+ax_top.set_title("Azimuthal drift — co-rotation vs gradient/curvature drift",
+                 fontsize=11)
 ax_top.legend(fontsize=9)
 sns.despine()
 plt.tight_layout()

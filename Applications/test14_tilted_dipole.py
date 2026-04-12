@@ -234,8 +234,8 @@ for tilt, lbl, col in zip(tilts_deg, labels, colors):
 ax2.axhline(0, color="gray", lw=0.6, ls="--", label="Geographic equator (z=0)")
 ax2.set_xlabel("t (code units)")
 ax2.set_ylabel("z (code units)")
-ax2.set_title("Test 14: Bounce motion — geographic z(t) for different dipole tilts\n"
-              "(each case starts at its magnetic equatorial plane)")
+ax2.set_title("Bounce motion — geographic $z(t)$ for different dipole tilts\n"
+              "(each case starts at its magnetic equatorial plane)", fontsize=11)
 ax2.legend(fontsize=9)
 sns.despine()
 plt.tight_layout()
@@ -339,8 +339,8 @@ ax3.view_init(elev=28, azim=-50)
 ax3.set_xlabel("x")
 ax3.set_ylabel("y")
 ax3.set_zlabel("z")
-ax3.set_title(f"Test 14: GC orbit — {tilt_show:.0f}° tilted dipole (Neptune-like)",
-              fontsize=10)
+ax3.set_title(f"GC orbit — {tilt_show:.0f}° tilted dipole (Neptune-like)",
+              fontsize=11)
 ax3.legend(fontsize=8, loc="upper left")
 
 plt.tight_layout()

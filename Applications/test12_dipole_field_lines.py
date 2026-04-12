@@ -84,7 +84,7 @@ ax.text(x_a + 0.15, z_a / 2, r"$r$", ha="left", fontsize=11)
 ax.set_xlabel(r"$x$ / $R_E$", fontsize=11)
 ax.set_ylabel(r"$z$ / $R_E$", fontsize=11)
 ax.set_title("Dipolar magnetic field lines\n"
-             r"(after Baumjohann \& Treumann Fig. 3.2)")
+             "(after Baumjohann & Treumann Fig. 3.2)")
 ax.set_xlim(-7.2, 7.2)
 ax.set_ylim(-5.5, 5.5)
 ax.set_aspect("equal")

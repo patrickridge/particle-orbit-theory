@@ -167,8 +167,9 @@ ax.plot(t_gc,   r_gc[:, 2],            lw=1.8, ls="--", color="C1", label="GC eq
 ax.axhline(0.0, color="k", lw=0.4, ls=":")
 ax.set_xlabel("t (code units)")
 ax.set_ylabel("z")
-ax.set_title(f"Test 11: z(t) — Full orbit, extracted GC, and GC equations\n"
-             fr"[$\alpha$={pitch_deg}°, M={M}, $r_g/r_{{eq}}$={r_gyro/r_eq:.3f}]")
+ax.set_title(f"Full orbit, extracted GC, and GC equations\n"
+             fr"[$\alpha$={pitch_deg}°, M={M}, $r_g/r_{{eq}}$={r_gyro/r_eq:.3f}]",
+             fontsize=11)
 ax.legend(frameon=True, fontsize=8)
 sns.despine()
 plt.tight_layout()
@@ -206,8 +207,7 @@ ax.axhline(r_gyro, color="k", ls="--", lw=0.9,
            label=fr"Gyroradius $r_g = {r_gyro:.3f}$")
 ax.set_xlabel("t (code units)")
 ax.set_ylabel("separation")
-ax.set_title("Test 11: Separation — orbit vs GC equations\n"
-             "Orange = true GC approximation error (excludes Larmor radius)")
+ax.set_title("Separation — orbit vs GC equations", fontsize=11)
 ax.legend(frameon=True, fontsize=8)
 sns.despine()
 plt.tight_layout()
@@ -241,7 +241,11 @@ ax.axhline(0.01, color="k", ls="--", lw=0.7, label="1% level")
 ax.set_yscale("log")
 ax.set_xlabel("t (code units)")
 ax.set_ylabel(r"$|(\mu - \mu_0)/\mu_0|$")
-ax.set_title(r"Test 11: Adiabatic invariant $\mu$ conservation (full orbit)")
+ax.set_title(r"Adiabatic invariant $\mu$ conservation (full orbit)", fontsize=11)
+# Annotate the mirror-point spikes
+ax.text(0.98, 0.95, r"Spikes at mirror points ($v_\perp \to 0$)",
+        transform=ax.transAxes, fontsize=7, ha="right", va="top",
+        color="gray", style="italic")
 ax.legend(frameon=True, fontsize=8)
 sns.despine()
 plt.tight_layout()

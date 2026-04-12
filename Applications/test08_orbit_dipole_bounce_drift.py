@@ -113,8 +113,9 @@ if len(sign_changes) >= 1:
                s=25, zorder=4, color="C2", label="Mirror points")
 ax.set_xlabel("t"); ax.set_ylabel("z")
 ax.set_title(
-    fr"Test 8: z(t) — bounce motion  [$\alpha$={pitch_deg}°, M={M}, "
-    fr"$r_g/r_{{eq}}$={r_gyro/r0[0]:.3f}, $T_b/T_g$={T_b_est/T_gyro:.0f}]"
+    fr"Bounce motion  [$\alpha$={pitch_deg}°, M={M}, "
+    fr"$r_g/r_{{eq}}$={r_gyro/r0[0]:.3f}, $T_b/T_g$={T_b_est/T_gyro:.0f}]",
+    fontsize=11
 )
 ax.legend(frameon=True)
 sns.despine()
@@ -129,7 +130,7 @@ fig, ax = plt.subplots(figsize=(8, 4))
 ax.plot(t, vpar, lw=1.2)
 ax.axhline(0.0, color="k", ls="--", lw=0.8)
 ax.set_xlabel("t"); ax.set_ylabel(r"$v_\parallel$")
-ax.set_title(r"Test 8: $v_\parallel$ reverses sign at mirror points")
+ax.set_title(r"$v_\parallel$ reverses sign at mirror points", fontsize=11)
 sns.despine()
 plt.tight_layout()
 plt.savefig(os.path.join(_FIG, "test08_dipole_vpar_vs_t.png"), dpi=300)
@@ -209,13 +210,12 @@ ax.plot_surface(
 )
 
 ax.plot(r[:n3d, 0], r[:n3d, 1], r[:n3d, 2],
-        lw=0.4, alpha=0.25, color="C0", label="Full orbit")
+        lw=0.4, alpha=0.4, color="C0", label="Full orbit")
 ax.plot(r_gc_extracted[:n3d, 0], r_gc_extracted[:n3d, 1], r_gc_extracted[:n3d, 2],
         lw=1.6, color="C1", label="Guiding centre")
 
 ax.set_xlabel("x"); ax.set_ylabel("y"); ax.set_zlabel("z")
-ax.set_title(f"Test 8: 3D orbit in dipole field (1.5 bounce periods)\n"
-             fr"M={M}, $r_g/r_{{eq}}$={r_gyro/r0[0]:.3f}")
+ax.set_title("3D orbit in dipole field", fontsize=11)
 ax.view_init(elev=25, azim=-50)
 ax.legend(fontsize=8)
 plt.tight_layout()

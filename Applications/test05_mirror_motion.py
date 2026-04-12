@@ -75,7 +75,7 @@ if len(turn) > 0:
     ax.scatter(t[turn], z[turn], s=18, zorder=3, label="turning points")
 ax.set_xlabel("t")
 ax.set_ylabel("z")
-ax.set_title("Test 5: Mirror-like field — bounce motion (turning points)")
+ax.set_title("Mirror bounce in toy field", fontsize=11)
 ax.legend(fontsize=8, frameon=True)
 sns.despine()
 plt.tight_layout()

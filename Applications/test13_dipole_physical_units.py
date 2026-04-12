@@ -209,8 +209,9 @@ ax.axhline(0.0, color="gray", lw=0.4, ls=":")
 ax.set_xlabel("t (s)")
 ax.set_ylabel(r"z  ($R_E$)")
 ax.set_title(
-    fr"Test 13 (SI): Bounce motion — 10 keV electron, "
-    fr"L={L:.0f}, $\alpha_{{eq}}={pitch_deg:.0f}°$"
+    fr"Bounce motion — 10 keV electron, "
+    fr"L={L:.0f}, $\alpha_{{eq}}={pitch_deg:.0f}°$",
+    fontsize=11
 )
 ax.legend(frameon=True, fontsize=8)
 sns.despine()

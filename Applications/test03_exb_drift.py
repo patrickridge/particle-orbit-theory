@@ -95,7 +95,7 @@ ax.plot(traj_E0[:, 0], traj_E0[:, 1], alpha=0.6, lw=0.8, label="E = 0")
 ax.plot(traj_E[:, 0],  traj_E[:, 1],  alpha=0.8, lw=0.8,
         label=r"E = $E_0\hat{x}$  (cycloid)")
 ax.set_xlabel("x"); ax.set_ylabel("y")
-ax.set_title("Test 3: E×B drift — x-y projection")
+ax.set_title(r"$\mathbf{E}\times\mathbf{B}$ drift — $x$-$y$ projection", fontsize=11)
 ax.set_aspect("equal")
 ax.legend(frameon=True)
 sns.despine()

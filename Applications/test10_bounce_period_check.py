@@ -137,8 +137,9 @@ if len(sign_changes) >= 1:
 ax.axhline(0.0, color="k", lw=0.6, ls="--")
 ax.set_xlabel("t (code units)")
 ax.set_ylabel("z")
-ax.set_title(f"Test 10: Bounce motion — "
-             fr"$\tau_b$ analytic={tau_b_analytic:.3f},  numerical={tau_b_num:.3f}")
+ax.set_title(f"Bounce motion — "
+             fr"$\tau_b$ analytic={tau_b_analytic:.3f},  numerical={tau_b_num:.3f}",
+             fontsize=11)
 ax.legend(frameon=True)
 sns.despine()
 plt.tight_layout()
@@ -177,7 +178,7 @@ if not np.isnan(tau_b_num):
                label=f"Numerical (α={pitch_deg}°)")
 ax.set_xlabel(r"Equatorial pitch angle $\alpha_{eq}$ (deg)")
 ax.set_ylabel(r"Bounce period $\tau_b$ (code units)")
-ax.set_title("Test 10: Bounce period vs pitch angle")
+ax.set_title("Bounce period vs pitch angle", fontsize=11)
 ax.legend(frameon=True)
 sns.despine()
 plt.tight_layout()

@@ -170,9 +170,9 @@ ax1.set_xlabel("x")
 ax1.set_ylabel("y")
 ax1.set_zlabel("z")
 ax1.set_title(
-    f"Test 16: GC orbit — rotating tilted dipole "
+    f"GC orbit — rotating tilted dipole "
     f"({tilt_deg:.0f}° tilt, Ω={Omega})",
-    fontsize=10
+    fontsize=11
 )
 ax1.legend(fontsize=8, loc="upper left")
 
@@ -190,8 +190,9 @@ ax2.axhline(0, color="gray", lw=0.6, ls="--")
 ax2.set_xlabel("t (code units)")
 ax2.set_ylabel("z (code units)")
 ax2.set_title(
-    f"Test 16: z(t) — bounce in rotating tilted dipole "
-    f"({tilt_deg:.0f}°, Ω={Omega})"
+    f"Bounce in rotating tilted dipole "
+    f"({tilt_deg:.0f}°, Ω={Omega})",
+    fontsize=11
 )
 sns.despine()
 plt.tight_layout()
@@ -219,9 +220,9 @@ ax_top.plot(t_gc, phi_linear,  lw=1.0, color="C1", ls="-.",
             label=f"Best-fit: Ω_d = {Omega_meas:.4f}")
 ax_top.set_ylabel("φ (rad)")
 ax_top.set_title(
-    f"Test 16: Azimuthal drift — rotating tilted dipole "
-    f"({tilt_deg:.0f}°, Ω={Omega})\n"
-    f"Total drift > Ω: E×B co-rotation + gradient/curvature drift combined"
+    f"Azimuthal drift — rotating tilted dipole "
+    f"({tilt_deg:.0f}°, Ω={Omega})",
+    fontsize=11
 )
 ax_top.legend(fontsize=9)
 
@@ -261,8 +262,9 @@ ax4.set_aspect("equal")
 ax4.set_xlabel("x (code units)")
 ax4.set_ylabel("y (code units)")
 ax4.set_title(
-    f"Test 16: Top-down view — rotating tilted dipole "
-    f"({tilt_deg:.0f}°, Ω={Omega})"
+    f"Top-down view — rotating tilted dipole "
+    f"({tilt_deg:.0f}°, Ω={Omega})",
+    fontsize=11
 )
 ax4.legend(fontsize=8)
 sns.despine()
