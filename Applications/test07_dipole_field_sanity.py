@@ -47,49 +47,72 @@ plt.savefig(os.path.join(_FIG, "test07_dipole_axis_scaling.png"), dpi=300)
 plt.show()
 
 # ======================================================================
-# Check 2: field-line directions in x-z plane (quiver)
-#          coloured by log|B| to show field strength variation
+# Check 2: field-line directions in x-z plane
+#          Clean academic figure: streamlines + planet + log|B| background
 # ======================================================================
-xs_q = np.linspace(-4.0, 4.0, 25)
-zs_q = np.linspace(-4.0, 4.0, 25)
-X, Z = np.meshgrid(xs_q, zs_q)
 
-Ux   = np.zeros_like(X)
-Uz   = np.zeros_like(Z)
-Bstr = np.zeros_like(X)   # |B| at each grid point (for colouring)
+# Dense grid for background field strength and streamlines
+N_bg = 300
+xs_bg = np.linspace(-5.0, 5.0, N_bg)
+zs_bg = np.linspace(-5.0, 5.0, N_bg)
+Xbg, Zbg = np.meshgrid(xs_bg, zs_bg)
 
-for i in range(X.shape[0]):
-    for j in range(X.shape[1]):
-        x = X[i, j]; z = Z[i, j]
-        r = np.array([x, 0.0, z])
-        if np.linalg.norm(r) < 0.75:      # exclude near-origin
-            Ux[i, j] = np.nan
-            Uz[i, j] = np.nan
-            Bstr[i, j] = np.nan
+Bx_grid = np.zeros_like(Xbg)
+Bz_grid = np.zeros_like(Zbg)
+Bmag_bg = np.zeros_like(Xbg)
+
+for i in range(N_bg):
+    for j in range(N_bg):
+        x_val = Xbg[i, j]; z_val = Zbg[i, j]
+        r_val = np.sqrt(x_val**2 + z_val**2)
+        if r_val < 1.0:
+            Bx_grid[i, j] = np.nan
+            Bz_grid[i, j] = np.nan
+            Bmag_bg[i, j] = np.nan
             continue
-        B    = B_func(r, 0.0)
-        bx, bz = B[0], B[2]
-        norm = np.sqrt(bx*bx + bz*bz)
-        Ux[i, j]   = bx / norm
-        Uz[i, j]   = bz / norm
-        Bstr[i, j] = np.linalg.norm(B)
+        Bvec = B_func(np.array([x_val, 0.0, z_val]), 0.0)
+        Bx_grid[i, j] = Bvec[0]
+        Bz_grid[i, j] = Bvec[2]
+        Bmag_bg[i, j] = np.linalg.norm(Bvec)
 
 fig, ax = plt.subplots(figsize=(6, 6))
 
-# colour the arrows by field strength
-Bstr_flat = Bstr.ravel()
-colours   = np.log10(np.where(np.isnan(Bstr_flat), np.nan, Bstr_flat + 1e-30))
+# Background: log|B| colour map — subtle
+logB = np.log10(np.where(np.isnan(Bmag_bg), np.nan, Bmag_bg + 1e-30))
+im = ax.pcolormesh(Xbg, Zbg, logB, cmap="Blues", alpha=0.35,
+                   shading="auto", rasterized=True)
+cbar = plt.colorbar(im, ax=ax, pad=0.02, shrink=0.85)
+cbar.set_label(r"$\log_{10}|\mathbf{B}|$", fontsize=10)
 
-q_plot = ax.quiver(X, Z, Ux, Uz,
-                   colours,
-                   pivot="mid", scale=30,
-                   cmap="viridis")
-cbar = plt.colorbar(q_plot, ax=ax, pad=0.02)
-cbar.set_label(r"$\log_{10}|B|$", fontsize=9)
+# Analytic field lines (cleaner than streamplot)
+lam_fl = np.linspace(-np.pi/2 * 0.95, np.pi/2 * 0.95, 500)
+L_vals = [1.5, 2.0, 2.5, 3.0, 3.5, 4.0, 5.0, 6.0]
+for L in L_vals:
+    r_fl = L * np.cos(lam_fl)**2
+    x_fl = r_fl * np.cos(lam_fl)
+    z_fl = r_fl * np.sin(lam_fl)
+    # Mask inside planet
+    inside = (x_fl**2 + z_fl**2) < 1.0**2
+    x_fl[inside] = np.nan; z_fl[inside] = np.nan
+    ax.plot(x_fl, z_fl, color="steelblue", lw=0.9, alpha=0.7)
+    ax.plot(-x_fl, z_fl, color="steelblue", lw=0.9, alpha=0.7)
 
-ax.set_xlabel("x")
-ax.set_ylabel("z")
-ax.set_title("Dipole field directions in $x$–$z$ plane ($y = 0$)", fontsize=11)
+# Planet circle — clean filled circle
+theta_p = np.linspace(0, 2*np.pi, 300)
+ax.fill(np.cos(theta_p), np.sin(theta_p), color="lightgray", zorder=5)
+ax.plot(np.cos(theta_p), np.sin(theta_p), "k-", lw=1.0, zorder=6)
+
+# Magnetic axis arrow
+ax.annotate("", xy=(0, 4.5), xytext=(0, -4.5),
+            arrowprops=dict(arrowstyle="-|>", color="crimson", lw=1.5),
+            zorder=7)
+ax.text(0.2, 4.2, "Magnetic axis", fontsize=8, color="crimson")
+
+ax.set_xlim(-5.0, 5.0)
+ax.set_ylim(-5.0, 5.0)
+ax.set_xlabel("$x$ / $R$", fontsize=10)
+ax.set_ylabel("$z$ / $R$", fontsize=10)
+ax.set_title("Dipole field structure in the $x$–$z$ plane", fontsize=11)
 ax.set_aspect("equal")
 sns.despine()
 plt.tight_layout()

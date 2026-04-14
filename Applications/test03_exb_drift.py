@@ -72,28 +72,26 @@ print(f"Theory     ExB drift velocity (y-component): {v_exb[1]:.4f}")
 print(f"Relative error: {abs(v_drift_num - v_exb[1]) / abs(v_exb[1]) * 100:.2f}%")
 
 # ======================================================================
-# Plot 1: 3D orbits — E=0 vs E=const
-# ======================================================================
-fig = plt.figure(figsize=(8, 6))
-ax  = fig.add_subplot(111, projection="3d")
-ax.plot(traj_E0[:, 0], traj_E0[:, 1], traj_E0[:, 2],
-        lw=1.0, label="E = 0 (no drift)")
-ax.plot(traj_E[:, 0],  traj_E[:, 1],  traj_E[:, 2],
-        lw=1.0, label=r"E = $E_0\hat{x}$ (ExB drift)")
-ax.set_xlabel("x"); ax.set_ylabel("y"); ax.set_zlabel("z")
-ax.set_title("Test 3: E×B drift — 3D comparison")
-ax.legend(fontsize=8)
-plt.tight_layout()
-plt.savefig(os.path.join(_FIG, "test03_exb_3D_compare.png"), dpi=300)
-plt.show()
-
-# ======================================================================
-# Plot 2: x-y plane — raw cycloid orbit (most intuitive picture)
+# x-y plane — raw cycloid orbit (most intuitive picture)
 # ======================================================================
 fig, ax = plt.subplots(figsize=(6, 5))
 ax.plot(traj_E0[:, 0], traj_E0[:, 1], alpha=0.6, lw=0.8, label="E = 0")
 ax.plot(traj_E[:, 0],  traj_E[:, 1],  alpha=0.8, lw=0.8,
         label=r"E = $E_0\hat{x}$  (cycloid)")
+
+# Start marker
+ax.plot(r0[0], r0[1], "o", color="k", ms=6, zorder=9)
+ax.text(r0[0] + 0.12, r0[1] + 0.15, "Start", fontsize=8, color="k")
+
+# Field direction annotations (inspired by animation)
+ax.annotate("", xy=(0.85, 0.95), xytext=(0.72, 0.95),
+            xycoords="axes fraction", textcoords="axes fraction",
+            arrowprops=dict(arrowstyle="->", color="crimson", lw=1.8))
+ax.text(0.87, 0.95, r"$\mathbf{E}$", color="crimson", fontsize=11,
+        va="center", transform=ax.transAxes)
+ax.text(0.72, 0.88, r"$\odot\;\mathbf{B}$", color="steelblue", fontsize=11,
+        va="center", transform=ax.transAxes)
+
 ax.set_xlabel("x"); ax.set_ylabel("y")
 ax.set_title(r"$\mathbf{E}\times\mathbf{B}$ drift — $x$-$y$ projection", fontsize=11)
 ax.set_aspect("equal")

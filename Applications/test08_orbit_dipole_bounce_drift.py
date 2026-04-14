@@ -176,28 +176,29 @@ plt.savefig(os.path.join(_FIG, "test08_dipole_energy_drift.png"), dpi=300)
 plt.show()
 
 # ======================================================================
-# Plot 5: 3D orbit — show first 1.5 bounce periods for clarity
-# (full run is 4 bounce periods but the 3D tube becomes very dense)
+# Plot 5: 3D orbit — original style, rotated view, 1.5 bounces only
 # ======================================================================
-n3d = int(1.5 * T_b_est / dt)   # 1.5 bounce periods
+n3d = int(1.5 * T_b_est / dt)
 
-fig = plt.figure(figsize=(7, 6))
+fig = plt.figure(figsize=(8, 7))
 ax  = fig.add_subplot(111, projection="3d")
+ax.set_facecolor("white")
 
-# --- Dipole field lines for geometric context ---
+# --- Dipole field lines ---
 lam_fl  = np.linspace(-1.25, 1.25, 300)
-L_fl    = [2.0, 2.5, 3.0, 3.5, 4.0]
-phi_fl  = np.linspace(0, 2*np.pi, 8, endpoint=False)
+L_fl    = [2.5, 3.0, 3.5]
+phi_fl  = np.linspace(0, 2*np.pi, 6, endpoint=False)
 for phi_f in phi_fl:
     for L_f in L_fl:
         r_fl = L_f * np.cos(lam_fl)**2
         xf   = r_fl * np.cos(lam_fl) * np.cos(phi_f)
         yf   = r_fl * np.cos(lam_fl) * np.sin(phi_f)
         zf   = r_fl * np.sin(lam_fl)
-        # Blank out below planet surface
         below = (xf**2 + yf**2 + zf**2) < 1.02**2
         xf[below] = np.nan; yf[below] = np.nan; zf[below] = np.nan
-        ax.plot(xf, yf, zf, color="steelblue", lw=0.4, alpha=0.18)
+        lw_fl = 0.6 if L_f == 3.0 else 0.3
+        al_fl = 0.30 if L_f == 3.0 else 0.15
+        ax.plot(xf, yf, zf, color="steelblue", lw=lw_fl, alpha=al_fl)
 
 # --- Planet sphere ---
 u_s = np.linspace(0, 2*np.pi, 30)
@@ -206,18 +207,39 @@ ax.plot_surface(
     np.outer(np.cos(u_s), np.sin(v_s)),
     np.outer(np.sin(u_s), np.sin(v_s)),
     np.outer(np.ones_like(u_s), np.cos(v_s)),
-    color="lightsteelblue", alpha=0.6, zorder=0
+    color="lightsteelblue", alpha=0.55, zorder=0
 )
 
+# --- Orbits: full orbit faint, GC bold ---
 ax.plot(r[:n3d, 0], r[:n3d, 1], r[:n3d, 2],
-        lw=0.4, alpha=0.4, color="C0", label="Full orbit")
+        lw=0.5, alpha=0.25, color="C0", label="Full orbit")
 ax.plot(r_gc_extracted[:n3d, 0], r_gc_extracted[:n3d, 1], r_gc_extracted[:n3d, 2],
-        lw=1.6, color="C1", label="Guiding centre")
+        lw=2.0, color="C1", label="Guiding centre")
 
+# --- Mirror point markers on GC path ---
+if len(sign_changes) >= 1:
+    mp_idx = sign_changes[sign_changes < n3d]
+    ax.scatter(r_gc_extracted[mp_idx, 0], r_gc_extracted[mp_idx, 1],
+               r_gc_extracted[mp_idx, 2], s=30, color="limegreen",
+               zorder=10, label="Mirror points", edgecolor="white", linewidth=0.5)
+
+# --- Start marker ---
+ax.plot([r_gc_extracted[0, 0]], [r_gc_extracted[0, 1]], [r_gc_extracted[0, 2]],
+        "o", color="k", ms=6, zorder=12)
+ax.text(r_gc_extracted[0, 0] + 0.25, r_gc_extracted[0, 1],
+        r_gc_extracted[0, 2] + 0.15, "Start", fontsize=7, color="k")
+
+ax.set_xlim(-4.5, 4.5); ax.set_ylim(-4.5, 4.5); ax.set_zlim(-2.5, 2.5)
 ax.set_xlabel("x"); ax.set_ylabel("y"); ax.set_zlabel("z")
-ax.set_title("3D orbit in dipole field", fontsize=11)
-ax.view_init(elev=25, azim=-50)
-ax.legend(fontsize=8)
+ax.set_title("Particle orbit in dipole field", fontsize=11)
+ax.view_init(elev=10, azim=60)       # -100° from previous
+
+ax.text2D(0.02, 0.90,
+          r"$T_{\rm gyro} \ll T_{\rm bounce} \ll T_{\rm drift}$",
+          transform=ax.transAxes, fontsize=9,
+          bbox=dict(boxstyle="round,pad=0.3", fc="white", alpha=0.8))
+
+ax.legend(fontsize=8, loc="upper right")
 plt.tight_layout()
 plt.savefig(os.path.join(_FIG, "test08_dipole_orbit_3D.png"), dpi=300)
 plt.show()

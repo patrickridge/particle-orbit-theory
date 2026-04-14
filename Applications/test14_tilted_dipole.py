@@ -99,9 +99,9 @@ for tilt in tilts_deg:
 
 
 # ======================================================================
-# Run 2: 47° only, short duration (4 bounce periods) for 3D figure
+# Run 2: 59° (Uranus-like) — matches animate14b for 3D figure
 # ======================================================================
-tilt_show  = 47.0
+tilt_show  = 59.0
 theta_3d   = np.radians(tilt_show)
 r0_3d      = np.array([L0 * np.cos(theta_3d), 0.0, -L0 * np.sin(theta_3d)])
 B_func_3d  = B_dipole_cartesian(M=M, tilt_deg=tilt_show)
@@ -115,7 +115,7 @@ v_par_3d  = abs(np.dot(v0_3d, bhat_3d))
 Omega_3d  = abs(q) * np.linalg.norm(B0_vec_3d) / m
 T_gyro_3d = 2.0 * np.pi / Omega_3d
 T_b_3d    = 4.0 * L0 / v_par_3d
-T_run_3d  = 15.0 * T_b_3d
+T_run_3d  = 5.0 * T_b_3d       # same as animate14b
 dt_3d     = min(T_b_3d / 1000.0, safety * T_gyro_3d)
 nsteps_3d = int(T_run_3d / dt_3d) + 1
 skip_3d   = max(1, int(round(T_gyro_3d / dt_3d)))
@@ -272,76 +272,104 @@ print("Saved test14_r_xy_sanity.png")
 
 
 # ======================================================================
-# Plot 3: 3D guiding-centre orbit — 47°, short run (4 bounce periods)
+# Plot 3: 3D GC orbit — static version of animate14b (59° tilt)
 #
-# Uses the dedicated short trajectory so the figure stays clean and
-# uncluttered, independent of the longer z(t) run.
-# Decimated to one point per gyration via skip_3d.
+# Single colour GC path, two reference planes, tilted magnetic axis,
+# same view angle and styling as the animation.
 # ======================================================================
 gc_3d  = extract_gc(traj_short, t_short, B_func_3d, q=q, m=m)
-x_gc   = gc_3d[::skip_3d, 0]
-y_gc   = gc_3d[::skip_3d, 1]
-z_gc   = gc_3d[::skip_3d, 2]
-t_gc   = t_short[::skip_3d]
 tilt_r = np.deg2rad(tilt_show)
+cos_t  = np.cos(tilt_r); sin_t = np.sin(tilt_r)
 
-norm = Normalize(vmin=t_gc.min(), vmax=t_gc.max())
-cmap = cm.plasma
-
-fig3 = plt.figure(figsize=(8, 7))
+fig3 = plt.figure(figsize=(7, 7))
 ax3  = fig3.add_subplot(111, projection="3d")
+ax3.set_facecolor("white")
+for pane in (ax3.xaxis.pane, ax3.yaxis.pane, ax3.zaxis.pane):
+    pane.fill = False
+    pane.set_edgecolor("#e0e0e0")
+ax3.grid(False)
 
-# GC orbit coloured by time
-for i in range(len(x_gc) - 1):
-    c = cmap(norm(0.5 * (t_gc[i] + t_gc[i + 1])))
-    ax3.plot(x_gc[i:i+2], y_gc[i:i+2], z_gc[i:i+2],
-             color=c, lw=1.6, alpha=0.9)
+# --- Tilted field lines — faint context (from animate14b) ---
+lam_fl = np.linspace(-1.25, 1.25, 300)
+L_fl_3d = [2.0, 2.5, 3.0, 3.5]
+phi_fl_3d = np.linspace(0, 2*np.pi, 8, endpoint=False)
+for phi_f in phi_fl_3d:
+    for L_f in L_fl_3d:
+        r_fl = L_f * np.cos(lam_fl)**2
+        xm   = r_fl * np.cos(lam_fl) * np.cos(phi_f)
+        ym   = r_fl * np.cos(lam_fl) * np.sin(phi_f)
+        zm   = r_fl * np.sin(lam_fl)
+        xg   =  xm * cos_t + zm * sin_t
+        yg   =  ym.copy()
+        zg   = -xm * sin_t + zm * cos_t
+        below = (xg**2 + yg**2 + zg**2) < 1.02**2
+        xg[below] = np.nan; yg[below] = np.nan; zg[below] = np.nan
+        ax3.plot(xg, yg, zg, color="#909090", lw=0.5, alpha=0.28)
 
-sm = cm.ScalarMappable(cmap=cmap, norm=norm)
-sm.set_array([])
-fig3.colorbar(sm, ax=ax3, pad=0.05, shrink=0.55, label="t (code units)")
+# --- Geographic equatorial plane (z = 0) — grey dashed ring ---
+phi_r = np.linspace(0, 2*np.pi, 200)
+R_eq  = 3.8
+ax3.plot(R_eq * np.cos(phi_r), R_eq * np.sin(phi_r), np.zeros(200),
+         color="#999999", lw=1.2, alpha=0.55, ls="--")
+ax3.text(R_eq * np.cos(np.pi * 1.25),
+         R_eq * np.sin(np.pi * 1.25) - 0.3, 0.15,
+         "Geographic equatorial plane", fontsize=7, color="#888888")
 
-# Planet sphere — radius 1 (code units) so it looks right relative to L=3 orbit
-u_s = np.linspace(0, 2 * np.pi, 30)
-v_s = np.linspace(0, np.pi, 20)
-r_p = 1.0
+# --- Magnetic equatorial plane — crimson dashed ring ---
+R_mag = 3.2
+phi_m = np.linspace(0, 2*np.pi, 200)
+x_meq = -R_mag * np.sin(phi_m) * cos_t
+y_meq =  R_mag * np.cos(phi_m)
+z_meq =  R_mag * np.sin(phi_m) * sin_t
+ax3.plot(x_meq, y_meq, z_meq,
+         color="crimson", lw=1.4, alpha=0.50, ls="--")
+lbl_idx = 40
+ax3.text(x_meq[lbl_idx] + 0.1, y_meq[lbl_idx] + 0.1, z_meq[lbl_idx] + 0.15,
+         "Magnetic equatorial plane", fontsize=7,
+         color="crimson", fontweight="bold")
+
+# --- Planet sphere ---
+u_s = np.linspace(0, 2*np.pi, 24)
+v_s = np.linspace(0, np.pi, 16)
 ax3.plot_surface(
-    r_p * np.outer(np.cos(u_s), np.sin(v_s)),
-    r_p * np.outer(np.sin(u_s), np.sin(v_s)),
-    r_p * np.outer(np.ones_like(u_s), np.cos(v_s)),
-    color="lightgray", alpha=0.7, zorder=3, linewidth=0
+    np.outer(np.cos(u_s), np.sin(v_s)),
+    np.outer(np.sin(u_s), np.sin(v_s)),
+    np.outer(np.ones_like(u_s), np.cos(v_s)),
+    color="lightsteelblue", alpha=0.55, zorder=0
 )
 
-# Magnetic equatorial plane — dashed circle at L=3 as spatial reference
-# Plane normal: m_hat = (sin θ, 0, cos θ); two perpendicular vectors in the plane:
-#   e1 = (cos θ, 0, -sin θ),  e2 = (0, 1, 0)
-e1  = np.array([ np.cos(tilt_r), 0.0, -np.sin(tilt_r)])
-e2  = np.array([0.0, 1.0, 0.0])
-phi_eq = np.linspace(0, 2 * np.pi, 200)
-eq_x = L0 * (np.cos(phi_eq) * e1[0] + np.sin(phi_eq) * e2[0])
-eq_y = L0 * (np.cos(phi_eq) * e1[1] + np.sin(phi_eq) * e2[1])
-eq_z = L0 * (np.cos(phi_eq) * e1[2] + np.sin(phi_eq) * e2[2])
-ax3.plot(eq_x, eq_y, eq_z, color="crimson", lw=0.8, ls="--",
-         alpha=0.5, label="Mag. equatorial plane (L=3)")
-
-# Axis arrows — fixed length relative to orbit size
-arrow_len = 1.8
-ax3.quiver(0, 0, 0, 0, 0, arrow_len,
-           color="dimgray", lw=1.5, arrow_length_ratio=0.12,
-           label="Rotation axis (z)")
+# --- Tilted magnetic axis — prominent (from animate14b) ---
 ax3.quiver(0, 0, 0,
-           arrow_len * np.sin(tilt_r), 0, arrow_len * np.cos(tilt_r),
-           color="crimson", lw=1.5, arrow_length_ratio=0.12,
-           label=f"Magnetic axis ({tilt_show:.0f}° tilt)")
+           2.2 * sin_t, 0, 2.2 * cos_t,
+           color="crimson", lw=3.0, arrow_length_ratio=0.12, zorder=5)
+ax3.quiver(0, 0, 0,
+           -2.2 * sin_t, 0, -2.2 * cos_t,
+           color="crimson", lw=1.5, alpha=0.35, arrow_length_ratio=0.0)
+ax3.text(2.2 * sin_t + 0.15, 0.1, 2.2 * cos_t + 0.1,
+         "Tilted magnetic axis", fontsize=8,
+         color="crimson", fontweight="bold")
 
-ax3.set_box_aspect([1, 1, 1])
-ax3.view_init(elev=28, azim=-50)
-ax3.set_xlabel("x")
-ax3.set_ylabel("y")
-ax3.set_zlabel("z")
-ax3.set_title(f"GC orbit — {tilt_show:.0f}° tilted dipole (Neptune-like)",
-              fontsize=11)
-ax3.legend(fontsize=8, loc="upper left")
+# --- Full GC path — single colour (C2 = green, matching animate14b) ---
+ax3.plot(gc_3d[:, 0], gc_3d[:, 1], gc_3d[:, 2],
+         lw=2.0, alpha=0.55, color="C2")
+
+# --- Start marker ---
+ax3.plot([gc_3d[0, 0]], [gc_3d[0, 1]], [gc_3d[0, 2]],
+         "o", color="k", ms=7, zorder=12)
+ax3.text(gc_3d[0, 0] + 0.2, gc_3d[0, 1], gc_3d[0, 2] + 0.2,
+         "Start", fontsize=8, color="k")
+
+# --- Label ---
+ax3.text2D(0.04, 0.06, "Guiding-centre drift path",
+           transform=ax3.transAxes, fontsize=8, color="C2", fontweight="bold")
+
+ax3.set_xlim(-4, 4); ax3.set_ylim(-4, 4); ax3.set_zlim(-3.5, 3.5)
+ax3.set_xlabel("x", fontsize=9); ax3.set_ylabel("y", fontsize=9)
+ax3.set_zlabel("z", fontsize=9)
+ax3.tick_params(labelsize=7)
+ax3.set_title(f"Tilted dipole ({tilt_show:.0f}° tilt)", fontsize=12,
+              fontweight="bold")
+ax3.view_init(elev=25, azim=-60)     # same as animate14b
 
 plt.tight_layout()
 plt.savefig(os.path.join(_FIG, "test14_orbit_3D_tilted.png"), dpi=300)

@@ -68,7 +68,7 @@ T_gyro     = 2.0 * np.pi / Omega_gyro
 v_par_mag  = abs(np.dot(v0, bhat))
 T_b_est    = 4.0 * L0 / v_par_mag
 T_cor      = 2.0 * np.pi / Omega
-T_run      = T_cor
+T_run      = 0.75 * T_cor    # 3/4 rotation — less dense than full revolution
 dt         = min(T_b_est / 500.0, 0.05 * T_gyro)
 nsteps     = int(T_run / dt) + 1
 skip       = max(1, int(round(T_gyro / dt)))
@@ -164,6 +164,10 @@ ax1.quiver(0, 0, 0,
            color="crimson", lw=1.5, arrow_length_ratio=0.15,
            label=f"Magnetic axis ({tilt_deg:.0f}° tilt)")
 
+# Start marker
+ax1.plot([x_gc[0]], [y_gc[0]], [z_gc[0]], "o", color="k", ms=6, zorder=12)
+ax1.text(x_gc[0] + 0.2, y_gc[0], z_gc[0] + 0.15, "Start", fontsize=7, color="k")
+
 ax1.set_box_aspect([1, 1, 1])
 ax1.view_init(elev=22, azim=-55)
 ax1.set_xlabel("x")
@@ -236,41 +240,5 @@ plt.tight_layout()
 plt.savefig(os.path.join(_FIG, "test16_rotating_dipole_phi_vs_t.png"), dpi=300)
 plt.close()
 print("Saved test16_rotating_dipole_phi_vs_t.png")
-
-# ======================================================================
-# Plot 4: Top-down x-y view — compare to co-rotation circle
-# ======================================================================
-fig4, ax4 = plt.subplots(figsize=(6, 6))
-
-for i in range(len(x_gc) - 1):
-    c = cmap_used(norm(0.5 * (t_gc[i] + t_gc[i + 1])))
-    ax4.plot(x_gc[i:i+2], y_gc[i:i+2], color=c, lw=1.6)
-
-theta_c = np.linspace(0, 2 * np.pi, 500)
-ax4.plot(L0 * np.cos(theta_c), L0 * np.sin(theta_c),
-         "k--", lw=1.0, label=f"L = {L0:.0f} reference circle")
-
-theta_p = np.linspace(0, 2 * np.pi, 200)
-ax4.fill(np.cos(theta_p), np.sin(theta_p), color="lightgray", zorder=5)
-ax4.plot(np.cos(theta_p), np.sin(theta_p), "k-", lw=0.8, zorder=6)
-
-sm2 = cm.ScalarMappable(cmap=cmap_used, norm=norm)
-sm2.set_array([])
-plt.colorbar(sm2, ax=ax4, label="t (code units)", shrink=0.8)
-
-ax4.set_aspect("equal")
-ax4.set_xlabel("x (code units)")
-ax4.set_ylabel("y (code units)")
-ax4.set_title(
-    f"Top-down view — rotating tilted dipole "
-    f"({tilt_deg:.0f}°, Ω={Omega})",
-    fontsize=11
-)
-ax4.legend(fontsize=8)
-sns.despine()
-plt.tight_layout()
-plt.savefig(os.path.join(_FIG, "test16_rotating_dipole_xy.png"), dpi=300)
-plt.close()
-print("Saved test16_rotating_dipole_xy.png")
 
 print("\nAll test16 figures saved.")
