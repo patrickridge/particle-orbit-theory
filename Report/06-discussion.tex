@@ -1,0 +1,184 @@
+\chapter{Discussion}
+\label{ch:discussion}
+
+This chapter interprets the results of Chapters~\ref{ch:verification}
+and~\ref{ch:results}, addressing the accuracy of the numerical
+implementation, the conditions under which the guiding-centre
+approximation holds, and the physical content of the planetary
+magnetosphere simulations.
+
+\section{Validity of the Numerical Implementation}
+\label{sec:disc_validity}
+
+The verification hierarchy in Chapter~\ref{ch:verification} demonstrates
+that the solver correctly implements the Lorentz force equation across a
+range of field configurations. In all cases with $\mathbf{E} = \mathbf{0}$
+and static $\mathbf{B}$, kinetic energy is conserved to better than
+$10^{-6}$ relative error. The analytic overlays in the verification tests
+are reproduced to high precision: the maximum radial deviation in circular
+gyromotion is below $10^{-8}$, the parallel motion in helical flight is
+exact to $10^{-9}$, and the drift speeds in the $\mathbf{E} \times
+\mathbf{B}$ and gradient-$B$ tests match theory to within 3\,\%. The
+dipole field passes both the on-axis magnitude scaling and field-direction
+checks. The tolerances $\texttt{rtol} = 10^{-9}$,
+$\texttt{atol} = 10^{-12}$ (equation~\eqref{eq:tolerances_num}) are
+therefore appropriate for all simulations in this project.
+
+\section{When Does Guiding-Centre Theory Apply?}
+\label{sec:disc_gc}
+
+The drift results in the verification tests show that guiding-centre
+theory accurately describes the slow motion of the guiding centre when
+$\rho / L_{\nabla B} \ll 1$. In the gradient-$B$ test the gradient is
+intentionally weak ($\varepsilon = 0.05$), placing the particle firmly in
+the adiabatic regime; the numerical drift agrees with the analytic
+prediction to within 3\,\%.
+
+The direct comparison between the full Lorentz orbit and the GC
+integrator in Section~\ref{sec:gc_vs_full} confirms this further: with
+$\rho / r_\mathrm{eq} \approx 0.006$ and $T_b / T_\Omega \approx 100$,
+the GC trajectory tracks the gyro-averaged full orbit across all four
+bounce cycles with no visible phase error in the bounce envelope.
+
+Guiding-centre theory is expected to break down when the Larmor radius
+becomes comparable to the field-variation scale. For the dipole
+simulations in Chapter~\ref{ch:results}, the approximate conservation of
+$\mu$ below 1\,\% relative variation confirms that the chosen parameters
+sit comfortably in the adiabatic regime. If the particle energy were
+increased or the particle moved to smaller $L$-shells where field
+gradients are steeper, $\mu$ conservation would degrade and the full
+orbit integration would be necessary even to describe the slow drift
+motion.
+
+\section{Guiding-Centre Approximation versus Full Orbit}
+\label{sec:disc_gc_full}
+
+The results of Section~\ref{sec:gc_vs_full} show that in the deep
+adiabatic regime ($\rho / r_\mathrm{eq} \approx 0.006$), the GC
+integrator reproduces the slow bounce dynamics of the full Lorentz orbit
+faithfully across approximately 400 gyrations, at a fraction of the
+computational cost.
+
+The slow growth of the positional offset between the extracted GC and
+the GC equations solution is a consequence of secular phase drift in
+the non-symplectic RK45 integrator rather than breakdown of the adiabatic
+approximation: the local agreement in $z(t)$ and $v_\parallel(t)$
+remains excellent throughout, and the envelope of $\mu$ shows no secular
+trend. A symplectic integrator such as the Boris scheme would suppress
+this drift and would be the natural choice for very long integration runs.
+
+\section{Physical Units and the SI Simulation}
+\label{sec:disc_si}
+
+The SI simulation of Section~\ref{sec:si_units} serves two purposes: it
+verifies that the dimensional factors are restored correctly, and it
+tests the solver under conditions where the timescale separation is
+extreme. At $L = 3$ a 10\,keV electron has
+$\rho / r_\mathrm{eq} \approx 10^{-5}$ and
+$T_b / T_\Omega \approx 57{,}000$, placing it far deeper into the
+adiabatic regime than any of the dimensionless test cases. The numerical
+mirror latitude agrees with the analytic prediction to within 0.02\,\%,
+confirming that the implementation handles SI-scale quantities without
+loss of precision.
+
+The relative energy drift of approximately 1.5\,\% over two bounce
+periods is larger than in the dimensionless tests, where
+$|\delta K|$ stays below $10^{-6}$. This is not a failure of the solver
+but a consequence of integrating approximately 115{,}000 gyrations: the
+local truncation error per step is comparable to the dimensionless cases,
+but it accumulates over far more cycles. The same mechanism produces the
+2\,\% relative variation in $\mu$. Both quantities grow secularly rather
+than oscillating, which is the signature of phase drift in a
+non-symplectic integrator. The physically meaningful diagnostic is the
+mirror-point accuracy, which remains excellent throughout, confirming
+that the adiabatic invariant is well conserved in the underlying physics
+even when the numerical representation of phase drifts over many
+gyrations.
+
+For applications requiring long-term phase accuracy at physical scales,
+a symplectic integrator would be the appropriate choice. The RK45 scheme
+used here is sufficient for the few-bounce-period runs in this project.
+
+\section{Tilted Dipole Fields}
+\label{sec:disc_tilted}
+
+The tilted dipole results of Section~\ref{sec:tilted} confirm that the
+solver handles the generalised dipole field correctly and that the mirror
+mechanism operates as expected even when the magnetic and geographic
+coordinate systems are misaligned. The key observation is that the
+asymmetric $z(t)$ bounce seen at $47^\circ$ and $59^\circ$ tilt is not
+a physical asymmetry in the particle dynamics but a geometric one: in
+magnetic coordinates the bounce remains symmetric, and the mirror
+latitudes are unchanged from the aligned case. The asymmetry appears
+only when the trajectory is projected onto the geographic $z$-axis,
+because the magnetic equatorial plane is tilted with respect to it.
+
+This distinction matters for interpreting observations of trapped
+particles at planets with large magnetic tilt. At Neptune ($47^\circ$
+tilt) and Uranus ($59^\circ$ tilt), a spacecraft measuring particle
+fluxes in geographic coordinates would see an apparently asymmetric
+pitch-angle distribution even though the underlying bounce dynamics are
+symmetric about the magnetic equator. The simulation reproduces this
+effect directly: the bounce period and $\mu$ conservation are
+indistinguishable across the three tilt angles, while the geographic
+$z(t)$ traces look qualitatively different.
+
+\section{\texorpdfstring{Corotation and $\mathbf{E} \times \mathbf{B}$ Drift}{Corotation and E x B Drift}}
+\label{sec:disc_corotation}
+
+The corotation test in Section~\ref{sec:corotation} provides a clean
+decomposition of the azimuthal drift into its magnetic and electric
+components. Running two simulations with identical initial conditions
+--- one with and one without the corotation electric field --- isolates
+the $\mathbf{E} \times \mathbf{B}$ contribution directly. The
+difference recovers the input rotation rate $\Omega = 0.02$ to within
+96.6\,\%, which is a strong confirmation that the corotation field is
+implemented correctly.
+
+The 3.4\,\% shortfall is physical rather than numerical. The corotation
+velocity $\mathbf{v}_\mathrm{rot} = \boldsymbol{\Omega} \times
+\mathbf{r}$ has a small component along $\mathbf{B}$ at non-equatorial
+latitudes, and since the $\mathbf{E} \times \mathbf{B}$ drift is the
+perpendicular part of $\mathbf{v}_\mathrm{rot}$, the effective drift
+speed is slightly less than $|\mathbf{v}_\mathrm{rot}|$. A particle
+that stayed exactly in the equatorial plane would co-rotate at exactly
+$\Omega$, but the bouncing particle samples non-equatorial field
+geometries where this projection effect reduces the time-averaged
+drift. This is a real physical effect that the simulation captures
+correctly.
+
+\section{The Rotating Tilted Dipole}
+\label{sec:disc_rotating}
+
+The rotating tilted dipole of Section~\ref{sec:rotating} is the most
+complete simulation in this project. It combines a time-dependent
+magnetic field, corotation electric field, and three-dimensional
+particle dynamics into a single integration. The fact that the solver
+handles this case without modification --- simply evaluating
+$\mathbf{B}(\mathbf{r}, t)$ and
+$\mathbf{E}(\mathbf{r}, t)$ at each timestep --- validates the
+generality of the implementation.
+
+Two features of the results deserve comment. First, the modulation of
+the bounce amplitude in $z(t)$ (Figure~\ref{fig:rot_z}) is a direct
+consequence of the rotating field geometry: as the tilted dipole sweeps
+past the particle, the effective mirror latitude shifts, producing an
+amplitude envelope at the rotation period. This modulation is absent
+in the static tilted case (Section~\ref{sec:tilted}), confirming
+that it arises from the time dependence of the field rather than the
+tilt itself.
+
+Second, the measured azimuthal drift rate $\Omega_\mathrm{meas}
+\approx 0.026$ exceeds the rotation rate $\Omega = 0.02$, consistent
+with the gradient and curvature drift contribution measured
+independently in the aligned corotation test
+(Section~\ref{sec:corotation}). The additional gradient and curvature
+drifts add to the corotation drift, producing a total azimuthal drift
+rate that slightly exceeds the planetary rotation rate. This is the
+expected physical behaviour for trapped particles in a rotating
+magnetosphere.
+
+Together, these results demonstrate that the solver can handle the full
+complexity of a rotating planetary magnetosphere, reproducing all three
+adiabatic motions (gyration, bounce, drift) simultaneously in a
+time-varying field geometry.

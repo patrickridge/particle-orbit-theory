@@ -1,0 +1,241 @@
+\appendix
+\chapter{Additional Material}
+\label{app:additional}
+
+\section{Derivation of the Uniform Magnetic Field Orbit}
+\label{sec:derivation}
+The analytic solution for a charged particle in a uniform magnetic field
+$\mathbf{B} = B_0\hat{\mathbf{z}}$ with $\mathbf{E} = \mathbf{0}$ is
+derived here. The equations of motion~\eqref{eq:drdt}--\eqref{eq:dvdt}
+reduce to
+\begin{align}
+  \dot{v}_x &= \Omega\,v_y, \label{eq:vx_dot} \\
+  \dot{v}_y &= -\Omega\,v_x, \label{eq:vy_dot} \\
+  \dot{v}_z &= 0, \label{eq:vz_dot}
+\end{align}
+where $\Omega = qB_0/m > 0$ for positive charge. From~\eqref{eq:vz_dot},
+$v_z(t) = v_z(0) \equiv v_\parallel$ is constant.
+Differentiating~\eqref{eq:vx_dot} and substituting~\eqref{eq:vy_dot}
+gives
+\begin{equation}
+  \ddot{v}_x = -\Omega^2 v_x,
+  \label{eq:sho}
+\end{equation}
+with general solution $v_x(t) = A\cos(\Omega t) + B\sin(\Omega t)$.
+Applying initial conditions $v_x(0) = v_\perp$ and $v_y(0) = 0$:
+\begin{align}
+  v_x(t) &= v_\perp \cos(\Omega t), \label{eq:vx_sol} \\
+  v_y(t) &= -v_\perp \sin(\Omega t). \label{eq:vy_sol}
+\end{align}
+Integrating with $x(0) = y(0) = 0$:
+\begin{align}
+  x(t) &= \frac{v_\perp}{\Omega}\sin(\Omega t)
+    = \rho\sin(\Omega t), \label{eq:x_sol} \\
+  y(t) &= \frac{v_\perp}{\Omega}\cos(\Omega t)
+    - \frac{v_\perp}{\Omega}
+    = \rho\bigl(\cos(\Omega t) - 1\bigr), \label{eq:y_sol} \\
+  z(t) &= v_\parallel\,t. \label{eq:z_sol}
+\end{align}
+This is a helix of radius $\rho = v_\perp/\Omega$ with guiding centre
+at $(0, -\rho, 0)$, confirming the results stated in
+Section~\ref{sec:uniform_B}.
+
+\section{Selected Code Listings}
+\label{sec:code_listings}
+This section reproduces the core modules used throughout the project. All
+test scripts follow the same pattern: import from these modules, define
+initial conditions, call the appropriate integrator, compute diagnostics,
+and save figures.
+
+\subsection{\texttt{orbit\_ivp\_core.py} --- Full Orbit Integrator}
+\begin{verbatim}
+import numpy as np
+from scipy.integrate import solve_ivp
+
+q = 1.0
+m = 1.0
+
+def lorentz_rhs(t, state, q, m, E_func, B_func):
+    r = state[:3]
+    v = state[3:]
+    E = E_func(r, t)
+    B = B_func(r, t)
+    drdt = v
+    dvdt = (q / m) * (E + np.cross(v, B))
+    return np.concatenate((drdt, dvdt))
+
+def simulate_orbit_ivp(
+        state0, dt, nsteps,
+        q=q, m=m,
+        E_func=None, B_func=None,
+        method="RK45",
+        rtol=1e-9, atol=1e-12,
+):
+    t_eval = dt * np.arange(nsteps)
+    t_span = (t_eval[0], t_eval[-1])
+    sol = solve_ivp(
+        fun=lambda t, y: lorentz_rhs(t, y, q, m, E_func, B_func),
+        t_span=t_span,
+        y0=state0,
+        t_eval=t_eval,
+        method=method,
+        rtol=rtol,
+        atol=atol,
+    )
+    if not sol.success:
+        raise RuntimeError(sol.message)
+    return sol.t, sol.y.T
+
+def extract_gc(traj, t, B_func, q=1.0, m=1.0):
+    """Extract guiding-centre positions from a full Lorentz orbit."""
+    r_gc = np.empty((len(t), 3))
+    for i in range(len(t)):
+        r = traj[i, :3]
+        v = traj[i, 3:]
+        B = B_func(r, float(t[i]))
+        B2 = float(np.dot(B, B))
+        r_gc[i] = r + (m / (q * B2)) * np.cross(v, B)
+    return r_gc
+\end{verbatim}
+
+\subsection{\texttt{guiding\_centre.py} --- Guiding-Centre Integrator}
+\begin{verbatim}
+import numpy as np
+from scipy.integrate import solve_ivp
+
+def _grad_Bmag(B_func, r, t, h=1e-4):
+    """Numerical gradient of |B| using central differences."""
+    r = np.asarray(r, dtype=float)
+    grad = np.zeros(3)
+    for i in range(3):
+        rp = r.copy(); rp[i] += h
+        rm = r.copy(); rm[i] -= h
+        grad[i] = (np.linalg.norm(B_func(rp, t)) -
+                   np.linalg.norm(B_func(rm, t))) / (2.0 * h)
+    return grad
+
+def _curvature(B_func, r, t, h=1e-4):
+    """Field-line curvature vector kappa = (b . nabla) b."""
+    r  = np.asarray(r, dtype=float)
+    B0 = B_func(r, t)
+    b0 = B0 / np.linalg.norm(B0)
+    rp = r + h * b0
+    rm = r - h * b0
+    bp = B_func(rp, t); bp = bp / np.linalg.norm(bp)
+    bm = B_func(rm, t); bm = bm / np.linalg.norm(bm)
+    return (bp - bm) / (2.0 * h)
+
+def gc_rhs(t, state, q, m, mu, E_func, B_func, h=1e-4):
+    """RHS of the guiding-centre equations of motion."""
+    r     = state[:3]
+    v_par = state[3]
+    B    = B_func(r, t)
+    Bmag = np.linalg.norm(B)
+    bhat = B / Bmag
+    E = E_func(r, t)
+    gradB = _grad_Bmag(B_func, r, t, h)
+    kappa = _curvature(B_func, r, t, h)
+    v_ExB  = np.cross(E, B) / Bmag**2
+    v_gradB = (mu / q) * np.cross(bhat, gradB) / Bmag
+    v_curv  = -(m * v_par**2 / q) * np.cross(kappa, bhat) / Bmag
+    v_drift = v_ExB + v_gradB + v_curv
+    drdt = v_par * bhat + v_drift
+    E_par     = np.dot(E, bhat)
+    dv_par_dt = (q / m) * E_par - (mu / m) * np.dot(bhat, gradB)
+    return np.concatenate([drdt, [dv_par_dt]])
+
+def simulate_gc_orbit(
+    state0_gc, mu, dt, nsteps,
+    q, m, E_func, B_func,
+    method="RK45", rtol=1e-9, atol=1e-12, h_fd=1e-4,
+):
+    """Integrate the guiding-centre equations of motion."""
+    t_eval = dt * np.arange(nsteps)
+    t_span = (t_eval[0], t_eval[-1])
+    sol = solve_ivp(
+        fun=lambda t, y: gc_rhs(t, y, q, m, mu, E_func, B_func, h=h_fd),
+        t_span=t_span,
+        y0=np.array(state0_gc, dtype=float),
+        t_eval=t_eval,
+        method=method, rtol=rtol, atol=atol,
+    )
+    if not sol.success:
+        raise RuntimeError(f"GC integrator failed: {sol.message}")
+    return sol.t, sol.y.T
+\end{verbatim}
+
+\subsection{\texttt{fields.py} --- Field Definitions}
+\begin{verbatim}
+import numpy as np
+
+def E_zero(r, t):
+    return np.zeros(3)
+
+def E_const(vec):
+    vec = np.array(vec, dtype=float)
+    def _E(r, t):
+        return vec.copy()
+    return _E
+
+def E_corotation(B_func, Omega):
+    """Corotation electric field: E = -(Omega x r) x B."""
+    def _E(r, t):
+        B    = B_func(r, t)
+        vrot = np.array([-Omega * r[1], Omega * r[0], 0.0])
+        return -np.cross(vrot, B)
+    return _E
+
+def B_uniform_z(B0=1.0):
+    B0 = float(B0)
+    def _B(r, t):
+        return np.array([0.0, 0.0, B0])
+    return _B
+
+def B_gradx_z(B0=1.0, eps=0.05):
+    """Linearly-varying field: Bz(x) = B0 * (1 + eps * x)."""
+    B0 = float(B0)
+    eps = float(eps)
+    def _B(r, t):
+        x = float(r[0])
+        Bz = B0 * (1.0 + eps * x)
+        return np.array([0.0, 0.0, Bz])
+    return _B
+
+def B_dipole_cartesian(M=1.0, tilt_deg=0.0, eps=1e-12):
+    """Magnetic dipole field, tilted by tilt_deg from +z in x-z plane."""
+    M     = float(M)
+    theta = float(tilt_deg) * np.pi / 180.0
+    mx    = M * np.sin(theta)
+    mz    = M * np.cos(theta)
+    def _B(r, t):
+        x, y, z = float(r[0]), float(r[1]), float(r[2])
+        r2 = max(x*x + y*y + z*z, eps)
+        r5 = r2 ** 2.5
+        m_dot_r = mx * x + mz * z
+        Bx = (3.0 * m_dot_r * x - r2 * mx) / r5
+        By = (3.0 * m_dot_r * y            ) / r5
+        Bz = (3.0 * m_dot_r * z - r2 * mz) / r5
+        return np.array([Bx, By, Bz])
+    return _B
+
+def B_dipole_rotating(M=1.0, tilt_deg=0.0, Omega=0.0, eps=1e-12):
+    """Rotating tilted dipole: moment rotates about z at rate Omega."""
+    M   = float(M)
+    theta = float(tilt_deg) * np.pi / 180.0
+    st, ct = np.sin(theta), np.cos(theta)
+    def _B(r, t):
+        t  = float(t)
+        mx = M * st * np.cos(Omega * t)
+        my = M * st * np.sin(Omega * t)
+        mz = M * ct
+        x, y, z = float(r[0]), float(r[1]), float(r[2])
+        r2 = max(x*x + y*y + z*z, eps)
+        r5 = r2 ** 2.5
+        m_dot_r = mx*x + my*y + mz*z
+        return np.array([
+            (3.0*m_dot_r*x - r2*mx) / r5,
+            (3.0*m_dot_r*y - r2*my) / r5,
+            (3.0*m_dot_r*z - r2*mz) / r5,
+        ])
+    return _B
+\end{verbatim}
