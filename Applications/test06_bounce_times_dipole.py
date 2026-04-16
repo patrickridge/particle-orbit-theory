@@ -6,32 +6,27 @@ from scipy.integrate import quad
 from scipy.optimize import brentq
 import pandas as pd
 
-# Figures directory — resolved relative to this script, so the script runs correctly from any working directory.
+# output directory
 _FIG = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "Figures")
 os.makedirs(_FIG, exist_ok=True)
 
 sns.set_theme(style="ticks", context="paper")
 
-# =============================================================
-# Test 6: Analytic bounce periods in Earth's dipole field
-#
-# Computes bounce periods analytically (no simulation) using the
-# Schulz & Lanzerotti formula, for varying L-shell and pitch angle.
-# Expected: tau_b decreases with pitch angle, increases with L-shell.
-# =============================================================
+# Test 6: bounce periods in dipole field
+# tau_b vs L-shell and pitch angle (Schulz & Lanzerotti)
 
-# Physical constants
+# physical constants
 e   = 1.602176634e-19       # C
 m_e = 9.1093837015e-31      # kg
 R_E = 6371e3                # m
 
-# Particle: 10 keV electron
+# 10 keV electron
 E_keV = 10.0
 E_J   = E_keV * 1e3 * e
 v     = np.sqrt(2.0 * E_J / m_e)
 print(f"10 keV electron speed: {v:.4e} m/s  ({v/3e8*100:.2f}% of c)")
 
-# ---- Helper functions ------------------------------------------------
+# helpers
 
 def B_over_Beq(lam):
     """B(lambda)/B_eq along a dipole field line."""
@@ -58,7 +53,7 @@ def bounce_period(L, alpha_eq):
     I, _ = quad(integrand, 0.0, lam_m, points=[lam_m], limit=300)
     return 4.0 * L * R_E * I / v
 
-# ---- Compute grid ----------------------------------------------------
+# sweep L and pitch angle
 Ls         = np.array([2, 3, 4, 5, 6], dtype=float)
 alpha_degs = [30, 60, 80]
 
@@ -73,9 +68,7 @@ for adeg in alpha_degs:
 
 df = pd.DataFrame(rows)
 
-# ======================================================================
-# Plot 1: tau_b vs L for each pitch angle
-# ======================================================================
+# plot tau_b vs L
 fig, ax = plt.subplots(figsize=(6, 4))
 
 for adeg in alpha_degs:
@@ -92,9 +85,7 @@ plt.tight_layout()
 plt.savefig(os.path.join(_FIG, "test06_bounce_times.png"), dpi=300)
 plt.show()
 
-# ======================================================================
-# Plot 2: tau_b vs pitch angle at fixed L (shows pitch-angle dependence)
-# ======================================================================
+# plot tau_b vs pitch angle
 L_fixed    = 4.0
 a_arr      = np.deg2rad(np.linspace(10, 85, 80))
 tau_arr    = [bounce_period(L_fixed, a) for a in a_arr]
@@ -109,7 +100,7 @@ plt.tight_layout()
 plt.savefig(os.path.join(_FIG, "test06_bounce_vs_pitch.png"), dpi=300)
 plt.show()
 
-# ---- Save table -------------------------------------------------------
+# save table
 df.to_csv("Results/test06_bounce_times.csv", index=False)
 print("\nSaved Results/test06_bounce_times.csv")
 print(df.to_string(index=False))

@@ -9,35 +9,12 @@ from matplotlib import cm
 from orbit_ivp_core import simulate_orbit_ivp, extract_gc
 from fields import E_zero, B_dipole_cartesian
 
-# Figures directory — resolved relative to this script, so the script runs correctly from any working directory.
+# output directory
 _FIG = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "Figures")
 os.makedirs(_FIG, exist_ok=True)
 
-# =============================================================
-# Test 14: Tilted dipole — planetary application
-#
-# Planetary reference tilts (magnetic vs rotation axis):
-#   Earth:   ~11°  (nearly aligned — nearly symmetric bounce)
-#   Neptune: ~47°  (strongly tilted — clearly asymmetric bounce)
-#   Uranus:  ~59°  (most extreme — very asymmetric bounce)
-#
-# Each orbit starts at the MAGNETIC equatorial plane for its tilt:
-#   r0 = L*(cosθ, 0, −sinθ)   (rotation of (3,0,0) around y by θ)
-# This ensures equivalent initial conditions for all tilts —
-# each particle starts at distance L=3 from the magnetic equator.
-# The z(t) plot is in geographic coordinates, so the bounce appears
-# asymmetric because the magnetic and geographic equators differ.
-#
-# Two separate simulation runs:
-#   (1) All three tilts for 7 bounce periods — used for z(t) plot,
-#       which shows long-time drift-shell modulation of the bounce.
-#   (2) 47° only for 4 bounce periods — used for the 3D GC orbit
-#       figure, which needs a short clean trajectory to be legible.
-#
-# Timestep strategy: dt = min(T_b/1000, safety*T_gyro) with
-# safety=0.05 and rtol=atol=1e-9 to keep gyration resolved even
-# at mirror points where B is stronger than at the start.
-# =============================================================
+# Test 14: tilted dipole — planetary application
+# Check: asymmetric bounce in geographic coords for Neptune/Uranus-like tilts
 
 q, m   = 1.0, 1.0
 M      = 500.0
@@ -52,17 +29,14 @@ labels    = ["0° (aligned)", "47° (Neptune-like)", "59° (Uranus-like)"]
 colors    = ["C0", "C1", "C2"]
 
 
-# ======================================================================
-# Run 1: All three tilts, long duration (7 bounce periods) for z(t)
-# ======================================================================
+# run 1: all tilts, 7 bounce periods
 trajs      = {}
 ts         = {}
 step_skips = {}
 B_funcs    = {}
 
 for tilt in tilts_deg:
-    # Starting position: magnetic equatorial plane for this tilt
-    # r0 = L*(cosθ, 0, -sinθ) — rotation of (L,0,0) around y-axis by tilt angle
+    # start at magnetic equatorial plane
     theta_rad = np.radians(tilt)
     r0 = np.array([L0 * np.cos(theta_rad), 0.0, -L0 * np.sin(theta_rad)])
 
@@ -98,9 +72,7 @@ for tilt in tilts_deg:
     B_funcs[tilt]    = B_func
 
 
-# ======================================================================
-# Run 2: 59° (Uranus-like) — matches animate14b for 3D figure
-# ======================================================================
+# run 2: 59° tilt for 3D figure
 tilt_show  = 59.0
 theta_3d   = np.radians(tilt_show)
 r0_3d      = np.array([L0 * np.cos(theta_3d), 0.0, -L0 * np.sin(theta_3d)])
@@ -131,16 +103,11 @@ t_short, traj_short = simulate_orbit_ivp(
 print("  done.")
 
 
-# ======================================================================
-# Plot 1: Field lines — aligned vs Neptune-like tilt
-#
-# No legend entries inside field_lines_xz — built from proxy artists
-# outside to avoid duplicates.
-# ======================================================================
+# field lines: aligned vs tilted
 L_shells = [1.5, 2.0, 3.0, 4.0, 5.0, 6.0]
 
 def field_lines_xz(tilt_deg, ax, title):
-    """Draw field lines, planet, and axes.  No legend entries added here."""
+    """Draw field lines, planet, and axes."""
     tilt_r = np.deg2rad(tilt_deg)
     ct, st = np.cos(tilt_r), np.sin(tilt_r)
 
@@ -159,29 +126,29 @@ def field_lines_xz(tilt_deg, ax, title):
                     f"L={int(L)}", fontsize=7,
                     color="steelblue", ha="left", va="bottom")
 
-    # Planet
+    # planet
     theta_c = np.linspace(0, 2 * np.pi, 300)
     ax.fill(np.cos(theta_c), np.sin(theta_c), color="lightgray", zorder=5)
     ax.plot(np.cos(theta_c), np.sin(theta_c), "k-", lw=0.8, zorder=6)
 
-    # Geographic rotation axis
+    # rotation axis
     ax.axvline(0, color="gray", lw=0.8, ls=":")
 
     if tilt_deg != 0.0:
-        # Magnetic axis
+        # magnetic axis
         ax_len = 6.0
         ax.annotate("", xy=(ax_len * st, ax_len * ct),
                     xytext=(-ax_len * st, -ax_len * ct),
                     arrowprops=dict(arrowstyle="-", color="crimson",
                                    lw=1.2, ls="--"))
 
-        # Magnetic equatorial plane
+        # magnetic equatorial plane
         eq_len = 6.5
         ax.plot([-eq_len * ct,  eq_len * ct],
                 [ eq_len * st, -eq_len * st],
                 color="crimson", lw=0.9, ls=(0, (2, 3)), alpha=0.7)
 
-        # Particle start at magnetic equatorial plane
+        # start marker
         theta_start = np.radians(tilt_deg)
         r0_start = np.array([L0 * np.cos(theta_start), 0.0, -L0 * np.sin(theta_start)])
         ax.plot(r0_start[0], r0_start[2], marker="o", ms=5, color="darkorange", zorder=7)
@@ -216,12 +183,7 @@ plt.close()
 print("\nSaved test14_tilted_field_lines.png")
 
 
-# ======================================================================
-# Plot 2: z(t) bounce comparison — 7 bounce periods
-#
-# Decimated by step_skips to show guiding-centre z only, removing
-# gyration residual from the raw trajectory.
-# ======================================================================
+# z(t) bounce comparison
 fig2, ax2 = plt.subplots(figsize=(9, 4.5))
 
 for tilt, lbl, col in zip(tilts_deg, labels, colors):
@@ -244,12 +206,7 @@ plt.close()
 print("Saved test14_z_vs_t_tilt_comparison.png")
 
 
-# ======================================================================
-# Plot 2b: |r_xy|(t) sanity check — GC should stay near L=3
-#
-# If the guiding centre drifts outward (third adiabatic invariant
-# violation) this plot will show r_xy growing away from L0=3.
-# ======================================================================
+# r_xy(t) confinement check
 fig_r, ax_r = plt.subplots(figsize=(9, 3.5))
 
 for tilt, lbl, col in zip(tilts_deg, labels, colors):
@@ -271,12 +228,7 @@ plt.close()
 print("Saved test14_r_xy_sanity.png")
 
 
-# ======================================================================
-# Plot 3: 3D GC orbit — static version of animate14b (59° tilt)
-#
-# Single colour GC path, two reference planes, tilted magnetic axis,
-# same view angle and styling as the animation.
-# ======================================================================
+# 3D GC orbit (59° tilt)
 gc_3d  = extract_gc(traj_short, t_short, B_func_3d, q=q, m=m)
 tilt_r = np.deg2rad(tilt_show)
 cos_t  = np.cos(tilt_r); sin_t = np.sin(tilt_r)
@@ -289,7 +241,7 @@ for pane in (ax3.xaxis.pane, ax3.yaxis.pane, ax3.zaxis.pane):
     pane.set_edgecolor("#e0e0e0")
 ax3.grid(False)
 
-# --- Tilted field lines — faint context (from animate14b) ---
+# tilted field lines
 lam_fl = np.linspace(-1.25, 1.25, 300)
 L_fl_3d = [2.0, 2.5, 3.0, 3.5]
 phi_fl_3d = np.linspace(0, 2*np.pi, 8, endpoint=False)
@@ -306,7 +258,7 @@ for phi_f in phi_fl_3d:
         xg[below] = np.nan; yg[below] = np.nan; zg[below] = np.nan
         ax3.plot(xg, yg, zg, color="#909090", lw=0.5, alpha=0.28)
 
-# --- Geographic equatorial plane (z = 0) — grey dashed ring ---
+# geographic equatorial plane
 phi_r = np.linspace(0, 2*np.pi, 200)
 R_eq  = 3.8
 ax3.plot(R_eq * np.cos(phi_r), R_eq * np.sin(phi_r), np.zeros(200),
@@ -315,7 +267,7 @@ ax3.text(R_eq * np.cos(np.pi * 1.25),
          R_eq * np.sin(np.pi * 1.25) - 0.3, 0.15,
          "Geographic equatorial plane", fontsize=7, color="#888888")
 
-# --- Magnetic equatorial plane — crimson dashed ring ---
+# magnetic equatorial plane ring
 R_mag = 3.2
 phi_m = np.linspace(0, 2*np.pi, 200)
 x_meq = -R_mag * np.sin(phi_m) * cos_t
@@ -328,7 +280,7 @@ ax3.text(x_meq[lbl_idx] + 0.1, y_meq[lbl_idx] + 0.1, z_meq[lbl_idx] + 0.15,
          "Magnetic equatorial plane", fontsize=7,
          color="crimson", fontweight="bold")
 
-# --- Planet sphere ---
+# planet
 u_s = np.linspace(0, 2*np.pi, 24)
 v_s = np.linspace(0, np.pi, 16)
 ax3.plot_surface(
@@ -338,7 +290,7 @@ ax3.plot_surface(
     color="lightsteelblue", alpha=0.55, zorder=0
 )
 
-# --- Tilted magnetic axis — prominent (from animate14b) ---
+# magnetic axis
 ax3.quiver(0, 0, 0,
            2.2 * sin_t, 0, 2.2 * cos_t,
            color="crimson", lw=3.0, arrow_length_ratio=0.12, zorder=5)
@@ -349,17 +301,17 @@ ax3.text(2.2 * sin_t + 0.15, 0.1, 2.2 * cos_t + 0.1,
          "Tilted magnetic axis", fontsize=8,
          color="crimson", fontweight="bold")
 
-# --- Full GC path — single colour (C2 = green, matching animate14b) ---
+# GC path
 ax3.plot(gc_3d[:, 0], gc_3d[:, 1], gc_3d[:, 2],
          lw=2.0, alpha=0.55, color="C2")
 
-# --- Start marker ---
+# start marker
 ax3.plot([gc_3d[0, 0]], [gc_3d[0, 1]], [gc_3d[0, 2]],
          "o", color="k", ms=7, zorder=12)
 ax3.text(gc_3d[0, 0] + 0.2, gc_3d[0, 1], gc_3d[0, 2] + 0.2,
          "Start", fontsize=8, color="k")
 
-# --- Label ---
+# label
 ax3.text2D(0.04, 0.06, "Guiding-centre drift path",
            transform=ax3.transAxes, fontsize=8, color="C2", fontweight="bold")
 

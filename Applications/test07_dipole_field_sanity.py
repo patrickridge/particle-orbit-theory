@@ -5,26 +5,19 @@ import seaborn as sns
 
 from fields import B_dipole_cartesian, dipole_B_magnitude_on_axis
 
-# Figures directory — resolved relative to this script, so the script runs correctly from any working directory.
+# output directory
 _FIG = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "Figures")
 os.makedirs(_FIG, exist_ok=True)
 
 sns.set_theme(style="ticks", context="paper")
 
-# =============================================================
-# Test 7: Dipole field sanity checks
-#
-# Verifies that B_dipole_cartesian() is implemented correctly:
-#   (1) on-axis |B| = 2M/z^3, (2) field directions form the correct dipole
-# Expected: relative error < 1e-14; quiver plot shows dipole loop pattern.
-# =============================================================
+# Test 7: dipole field sanity
+# check on-axis |B| = 2M/z^3, field line directions
 
 M      = 1.0
 B_func = B_dipole_cartesian(M=M)
 
-# ======================================================================
-# Check 1: on-axis magnitude vs theory  |B| = 2M/z^3
-# ======================================================================
+# on-axis |B| vs theory
 zs       = np.linspace(1.0, 5.0, 200)
 Bmag_num = np.array([np.linalg.norm(B_func(np.array([0.0, 0.0, z]), 0.0))
                      for z in zs])
@@ -46,12 +39,9 @@ plt.tight_layout()
 plt.savefig(os.path.join(_FIG, "test07_dipole_axis_scaling.png"), dpi=300)
 plt.show()
 
-# ======================================================================
-# Check 2: field-line directions in x-z plane
-#          Clean academic figure: streamlines + planet + log|B| background
-# ======================================================================
+# field lines in x-z plane
 
-# Dense grid for background field strength and streamlines
+# background grid
 N_bg = 300
 xs_bg = np.linspace(-5.0, 5.0, N_bg)
 zs_bg = np.linspace(-5.0, 5.0, N_bg)
@@ -77,32 +67,32 @@ for i in range(N_bg):
 
 fig, ax = plt.subplots(figsize=(6, 6))
 
-# Background: log|B| colour map — subtle
+# log|B| colourmap
 logB = np.log10(np.where(np.isnan(Bmag_bg), np.nan, Bmag_bg + 1e-30))
 im = ax.pcolormesh(Xbg, Zbg, logB, cmap="Blues", alpha=0.35,
                    shading="auto", rasterized=True)
 cbar = plt.colorbar(im, ax=ax, pad=0.02, shrink=0.85)
 cbar.set_label(r"$\log_{10}|\mathbf{B}|$", fontsize=10)
 
-# Analytic field lines (cleaner than streamplot)
+# field lines
 lam_fl = np.linspace(-np.pi/2 * 0.95, np.pi/2 * 0.95, 500)
 L_vals = [1.5, 2.0, 2.5, 3.0, 3.5, 4.0, 5.0, 6.0]
 for L in L_vals:
     r_fl = L * np.cos(lam_fl)**2
     x_fl = r_fl * np.cos(lam_fl)
     z_fl = r_fl * np.sin(lam_fl)
-    # Mask inside planet
+    # mask inside planet
     inside = (x_fl**2 + z_fl**2) < 1.0**2
     x_fl[inside] = np.nan; z_fl[inside] = np.nan
     ax.plot(x_fl, z_fl, color="steelblue", lw=0.9, alpha=0.7)
     ax.plot(-x_fl, z_fl, color="steelblue", lw=0.9, alpha=0.7)
 
-# Planet circle — clean filled circle
+# planet
 theta_p = np.linspace(0, 2*np.pi, 300)
 ax.fill(np.cos(theta_p), np.sin(theta_p), color="lightgray", zorder=5)
 ax.plot(np.cos(theta_p), np.sin(theta_p), "k-", lw=1.0, zorder=6)
 
-# Magnetic axis arrow
+# magnetic axis
 ax.annotate("", xy=(0, 4.5), xytext=(0, -4.5),
             arrowprops=dict(arrowstyle="-|>", color="crimson", lw=1.5),
             zorder=7)

@@ -9,38 +9,14 @@ from matplotlib import cm
 from orbit_ivp_core import simulate_orbit_ivp, extract_gc
 from fields import B_dipole_rotating, E_corotation
 
-# Figures directory — resolved relative to this script, so the script runs correctly from any working directory.
+# output directory
 _FIG = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "Figures")
 os.makedirs(_FIG, exist_ok=True)
 
 sns.set_theme(style="ticks", context="paper")
 
-# =============================================================
-# Test 16: Rotating tilted dipole — full planetary magnetosphere
-#
-# Combines everything from test14 (tilted dipole) and test15
-# (corotation E field) into a single simulation representing a
-# real rotating magnetosphere (Neptune-like, 47° tilt).
-#
-# B(r,t) is now time-varying: the dipole moment rotates about z
-#   m(t) = M * (sinθ·cos(Ωt),  sinθ·sin(Ωt),  cosθ)
-#
-# The corotation E field E = -(Ω×r)×B(r,t) is computed from the
-# instantaneous B at each integration step — no further changes
-# to the integrator are needed.
-#
-# The particle undergoes all three adiabatic motions simultaneously:
-#   1. Fast gyration around the (rotating) local field line
-#   2. Bounce between mirror points in the tilted geometry
-#   3. Azimuthal co-rotation at angular rate Ω
-#
-# Comparison between test14 (static tilted, no E),
-# test15 (aligned rotating, E field) and test16 (full case)
-# shows how each ingredient modifies the orbit.
-#
-# Omega = 0.02, tilt = 47° (Neptune-like).
-# T_run = 1 full corotation period = 2π/Omega ≈ 314 time units.
-# =============================================================
+# Test 16: rotating tilted dipole (Neptune-like, 47 deg)
+# time-dependent B with corotation E field
 
 q, m      = 1.0, 1.0
 M         = 500.0
@@ -56,7 +32,7 @@ r0    = np.array([L0 * np.cos(theta_rad), 0.0, -L0 * np.sin(theta_rad)])
 v_mag = 1.0
 pitch = np.deg2rad(45.0)
 
-# Initial field at t=0 (same as static tilted dipole at t=0)
+# field at t=0
 B0_vec = B_func(r0, 0.0)
 bhat   = B0_vec / np.linalg.norm(B0_vec)
 v0     = v_mag * (np.cos(pitch) * bhat
@@ -85,17 +61,12 @@ t, traj = simulate_orbit_ivp(
 )
 print("done.")
 
-# Extract GC analytically then decimate for plotting
+# GC extraction and decimation
 gc   = extract_gc(traj, t, B_func, q=q, m=m)
 x_gc = gc[::skip, 0];  y_gc = gc[::skip, 1];  z_gc = gc[::skip, 2];  t_gc = t[::skip]
 r_gc = np.sqrt(x_gc**2 + y_gc**2)
 
-# Measure mean azimuthal drift rate from linear fit to unwrapped phi(t).
-# Note: for an aligned dipole v_ExB = Omega x r exactly (v_rot · B = 0).
-# For a tilted dipole B has x-y components so v_rot · B != 0 in general,
-# meaning v_ExB = v_rot - B_hat(v_rot · B_hat) < v_rot.
-# The measured drift rate will therefore differ from Omega — this is
-# real physics, not a numerical error.
+# azimuthal drift rate (tilted dipole gives Omega_d < Omega)
 phi_gc    = np.unwrap(np.arctan2(y_gc, x_gc))
 n         = len(phi_gc)
 i0, i1    = n // 10, 9 * n // 10
@@ -107,13 +78,11 @@ print(f"(For a tilted dipole E×B drift < Omega because v_rot · B != 0)")
 norm      = Normalize(vmin=t_gc.min(), vmax=t_gc.max())
 cmap_used = cm.plasma
 
-# ======================================================================
-# Plot 1: 3D guiding-centre orbit
-# ======================================================================
+# Plot 1: 3D GC orbit
 fig1 = plt.figure(figsize=(8, 7))
 ax1  = fig1.add_subplot(111, projection="3d")
 
-# --- Tilted dipole field lines at t=0 ---
+# tilted field lines at t=0
 tilt_r   = np.deg2rad(tilt_deg)
 cos_tilt = np.cos(tilt_r); sin_tilt = np.sin(tilt_r)
 lam_fl   = np.linspace(-1.25, 1.25, 300)
@@ -122,11 +91,11 @@ phi_fl   = np.linspace(0, 2*np.pi, 8, endpoint=False)
 for phi_f in phi_fl:
     for L_f in L_fl:
         r_fl = L_f * np.cos(lam_fl)**2
-        # In magnetic (untilted) frame
+        # magnetic frame
         xm = r_fl * np.cos(lam_fl) * np.cos(phi_f)
         ym = r_fl * np.cos(lam_fl) * np.sin(phi_f)
         zm = r_fl * np.sin(lam_fl)
-        # Rotate to geographic frame (tilt θ around y-axis)
+        # rotate to geographic frame
         xg = xm * cos_tilt + zm * sin_tilt
         yg = ym.copy()
         zg = -xm * sin_tilt + zm * cos_tilt
@@ -134,7 +103,7 @@ for phi_f in phi_fl:
         xg[below] = np.nan; yg[below] = np.nan; zg[below] = np.nan
         ax1.plot(xg, yg, zg, color="steelblue", lw=0.4, alpha=0.18)
 
-# GC orbit coloured by time
+# GC path coloured by time
 for i in range(len(x_gc) - 1):
     c = cmap_used(norm(0.5 * (t_gc[i] + t_gc[i + 1])))
     ax1.plot(x_gc[i:i+2], y_gc[i:i+2], z_gc[i:i+2],
@@ -144,7 +113,7 @@ sm = cm.ScalarMappable(cmap=cmap_used, norm=norm)
 sm.set_array([])
 fig1.colorbar(sm, ax=ax1, pad=0.08, shrink=0.55, label="t (code units)")
 
-# Planet sphere
+# planet
 u_s = np.linspace(0, 2 * np.pi, 24)
 v_s = np.linspace(0, np.pi, 16)
 r_p = 1.0
@@ -164,7 +133,7 @@ ax1.quiver(0, 0, 0,
            color="crimson", lw=1.5, arrow_length_ratio=0.15,
            label=f"Magnetic axis ({tilt_deg:.0f}° tilt)")
 
-# Start marker
+# start marker
 ax1.plot([x_gc[0]], [y_gc[0]], [z_gc[0]], "o", color="k", ms=6, zorder=12)
 ax1.text(x_gc[0] + 0.2, y_gc[0], z_gc[0] + 0.15, "Start", fontsize=7, color="k")
 
@@ -185,9 +154,7 @@ plt.savefig(os.path.join(_FIG, "test16_rotating_dipole_3D.png"), dpi=300)
 plt.close()
 print("Saved test16_rotating_dipole_3D.png")
 
-# ======================================================================
-# Plot 2: z(t) — bounce modulated by rotating asymmetric field
-# ======================================================================
+# Plot 2: z(t) bounce
 fig2, ax2 = plt.subplots(figsize=(9, 3.5))
 ax2.plot(t_gc, z_gc, lw=0.9, color="C0")
 ax2.axhline(0, color="gray", lw=0.6, ls="--")
@@ -204,9 +171,7 @@ plt.savefig(os.path.join(_FIG, "test16_rotating_dipole_z_vs_t.png"), dpi=300)
 plt.close()
 print("Saved test16_rotating_dipole_z_vs_t.png")
 
-# ======================================================================
-# Plot 3: φ(t) — co-rotation rate verification
-# ======================================================================
+# Plot 3: phi(t) co-rotation check
 phi_theory = Omega * t_gc
 
 fig3, (ax_top, ax_bot) = plt.subplots(

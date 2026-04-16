@@ -1,41 +1,16 @@
 import numpy as np
 from scipy.integrate import solve_ivp
 
-# =============================================================
-# guiding_centre.py
-# Guiding-centre (GC) equations of motion.
-#
-# State vector:  [X, Y, Z, v_par]   (4 elements)
-# Conserved:     mu = m * v_perp^2 / (2 * |B|)   (adiabatic invariant)
-#
-# Equations of motion (Baumjohann & Treumann, Ch. 2):
-#
-#   dR/dt    = v_par * b_hat + v_ExB + v_gradB + v_curv
-#
-#   dv_par/dt = (q/m) * E_par  -  (mu/m) * (b_hat . grad|B|)
-#                                            ^-- mirror force
-#
-# Drift velocities:
-#   v_ExB   = (E x B) / B^2
-#   v_gradB = (mu / q) * (b_hat x grad|B|) / |B|
-#   v_curv  = -(m * v_par^2 / q) * (kappa x b_hat) / |B|
-#             where  kappa = (b_hat . nabla) b_hat  (curvature vector,
-#             pointing toward centre of curvature)
-#
-# All gradients computed by central finite differences.
-#
-# Sign conventions (verified for dipole + B_curved_z):
-#   - Both v_gradB and v_curv are in the SAME azimuthal direction for
-#     the same particle species (both add to produce the ring current).
-#   - The NEGATIVE sign in v_curv is essential.
-# =============================================================
+# guiding_centre.py — GC equations of motion
+# State: [X, Y, Z, v_par],  mu conserved
+# dR/dt = v_par*bhat + v_ExB + v_gradB + v_curv
+# dv_par/dt = (q/m)*E_par - (mu/m)*(bhat . grad|B|)
+# NB: minus sign in v_curv is needed so grad-B and curvature drifts
+#     go in the same direction (both contribute to ring current)
 
 
 def _grad_Bmag(B_func, r, t, h=1e-4):
-    """
-    Numerical gradient of |B| at position r using central differences.
-    Returns the 3-vector grad|B|.
-    """
+    """grad|B| by central differences."""
     r = np.asarray(r, dtype=float)
     grad = np.zeros(3)
     for i in range(3):
@@ -47,12 +22,7 @@ def _grad_Bmag(B_func, r, t, h=1e-4):
 
 
 def _curvature(B_func, r, t, h=1e-4):
-    """
-    Numerical field-line curvature vector kappa = (b_hat . nabla) b_hat
-    evaluated at position r, using central differences along b_hat.
-
-    kappa points TOWARD the centre of curvature.
-    """
+    """Curvature vector kappa = (bhat . nabla) bhat, by central differences."""
     r  = np.asarray(r, dtype=float)
     B0 = B_func(r, t)
     b0 = B0 / np.linalg.norm(B0)
@@ -64,23 +34,7 @@ def _curvature(B_func, r, t, h=1e-4):
 
 
 def gc_rhs(t, state, q, m, mu, E_func, B_func, h=1e-4):
-    """
-    RHS of the guiding-centre equations of motion.
-
-    Parameters
-    ----------
-    t      : float  — current time
-    state  : (4,)   — [X, Y, Z, v_par]
-    q, m   : charge and mass
-    mu     : magnetic moment (conserved adiabatic invariant)
-    E_func : callable  E(r, t) -> (3,)
-    B_func : callable  B(r, t) -> (3,)
-    h      : finite-difference step for gradient calculations
-
-    Returns
-    -------
-    dsdt : (4,)
-    """
+    """RHS for the GC equations."""
     r     = state[:3]
     v_par = state[3]
 
@@ -90,25 +44,16 @@ def gc_rhs(t, state, q, m, mu, E_func, B_func, h=1e-4):
 
     E = E_func(r, t)
 
-    # ---- Precompute spatial derivatives --------------------------------
     gradB = _grad_Bmag(B_func, r, t, h)
     kappa = _curvature(B_func, r, t, h)
 
-    # ---- Drift velocities ---------------------------------------------
-    # E x B drift
-    v_ExB = np.cross(E, B) / Bmag**2
-
-    # Grad-B drift:  (mu / q) * (b_hat x grad|B|) / |B|
+    # drift velocities
+    v_ExB   = np.cross(E, B) / Bmag**2
     v_gradB = (mu / q) * np.cross(bhat, gradB) / Bmag
-
-    # Curvature drift:  -(m v_par^2 / q) * (kappa x b_hat) / |B|
-    # NOTE: the negative sign is required for both v_gradB and v_curv
-    # to be in the same azimuthal direction (verified analytically).
-    v_curv = -(m * v_par**2 / q) * np.cross(kappa, bhat) / Bmag
+    v_curv  = -(m * v_par**2 / q) * np.cross(kappa, bhat) / Bmag
 
     v_drift = v_ExB + v_gradB + v_curv
 
-    # ---- Equations of motion ------------------------------------------
     drdt = v_par * bhat + v_drift
 
     E_par     = np.dot(E, bhat)
@@ -118,40 +63,11 @@ def gc_rhs(t, state, q, m, mu, E_func, B_func, h=1e-4):
 
 
 def simulate_gc_orbit(
-    state0_gc,
-    mu,
-    dt,
-    nsteps,
-    q,
-    m,
-    E_func,
-    B_func,
-    method="RK45",
-    rtol=1e-9,
-    atol=1e-12,
-    h_fd=1e-4,
+    state0_gc, mu, dt, nsteps,
+    q, m, E_func, B_func,
+    method="RK45", rtol=1e-9, atol=1e-12, h_fd=1e-4,
 ):
-    """
-    Integrate the guiding-centre equations of motion.
-
-    Parameters
-    ----------
-    state0_gc : (4,) — initial [X, Y, Z, v_par]
-    mu        : float — conserved magnetic moment  m * v_perp^2 / (2|B|)
-    dt        : float — output time step
-    nsteps    : int   — number of output steps
-    q, m      : charge and mass
-    E_func, B_func : field callables
-    method    : scipy solve_ivp method (default 'RK45')
-    rtol, atol: solver tolerances
-    h_fd      : finite-difference step for gradient calculations
-                (a value ~1e-4 works well for the dipole field at r ~ 3)
-
-    Returns
-    -------
-    t    : (nsteps,) array of times
-    traj : (nsteps, 4) array  — columns [X, Y, Z, v_par]
-    """
+    """Integrate GC equations.  Returns (t, traj) with traj shape (nsteps, 4)."""
     t_eval = dt * np.arange(nsteps)
     t_span = (t_eval[0], t_eval[-1])
 

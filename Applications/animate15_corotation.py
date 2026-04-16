@@ -1,19 +1,4 @@
-"""
-animate15_corotation.py
-=======================
-Single top-down view. One clear physics message:
-
-  The corotation E×B drift makes the guiding centre rotate with the planet.
-  Without it, the GC slowly drifts and falls far behind.
-
-Two overlaid cases:
-  Grey  (faint)  — magnetic drift only  (grad-B + curvature)
-  Orange (bold)  — magnetic drift + corotation E×B
-
-Red arm = planet rotation reference.
-
-Saves: ../Figures/animate15_corotation.gif
-"""
+"""Animate corotation E x B drift vs magnetic drift only."""
 
 import os
 import numpy as np
@@ -25,7 +10,7 @@ from fields import E_zero, E_corotation, B_dipole_cartesian
 
 _DIR = os.path.dirname(os.path.abspath(__file__))
 
-# ---- Parameters ----
+# parameters
 q, m  = 1.0, 1.0
 M     = 500.0
 Omega = 0.02          # planet rotation rate
@@ -78,9 +63,7 @@ Om_E   = np.polyfit(t_s[i0:i1], phi_E[i0:i1],   1)[0]
 Om_noE = np.polyfit(t_s[i0:i1], phi_noE[i0:i1], 1)[0]
 print(f"Drift rates:  no-E = {Om_noE:.4f}   with-E = {Om_E:.4f}   planet = {Omega}")
 
-# =====================================================================
-# Figure
-# =====================================================================
+# figure setup
 fig, ax = plt.subplots(figsize=(7, 7))
 fig.patch.set_facecolor("white")
 ax.set_facecolor("white")
@@ -103,44 +86,42 @@ ax.fill(r_planet * np.cos(theta_c), r_planet * np.sin(theta_c),
 ax.plot(r_planet * np.cos(theta_c), r_planet * np.sin(theta_c),
         color="#666666", lw=0.8, zorder=6)
 
-# Static ghost paths — give the viewer the full envelope from frame 1
+# faint full paths for reference
 ax.plot(gc_noE[:, 0], gc_noE[:, 1],
         color="#bbbbbb", lw=0.8, alpha=0.40, zorder=2)
 ax.plot(gc_E[:, 0], gc_E[:, 1],
         color="darkorange", lw=0.8, alpha=0.20, zorder=2)
 
-# ---- Animated artists ----
-TRAIL = 80   # trail length in decimated-GC steps
+# animated artists
+TRAIL = 80
 
 # Planet rotation arm
 arm,     = ax.plot([], [], "-", color="crimson", lw=2.5, alpha=0.9,  zorder=7)
 arm_dot, = ax.plot([], [], "o", color="crimson", ms=10,               zorder=8)
 
-# No-E guiding centre — faint grey
+# no-E guiding centre
 trail_noE, = ax.plot([], [], lw=1.8, color="#888888", alpha=0.70, zorder=3)
 dot_noE,   = ax.plot([], [], "o", color="#888888", ms=9, zorder=9,
                      markeredgecolor="white", markeredgewidth=1.2)
 
-# With-E guiding centre — bold orange
+# with-E guiding centre
 trail_E, = ax.plot([], [], lw=3.2, color="darkorange", alpha=1.0, zorder=4)
 dot_E,   = ax.plot([], [], "o", color="darkorange", ms=13, zorder=10,
                    markeredgecolor="white", markeredgewidth=1.6)
 
-# ---- Legend (proxy lines) ----
+# legend
 ax.plot([], [], "-",  color="#888888",  lw=1.8, label="Magnetic drift only")
 ax.plot([], [], "-",  color="darkorange", lw=3.2, label=r"With corotation E×B drift")
 ax.plot([], [], "-",  color="crimson",  lw=2.5, label="Planet rotation")
 ax.legend(fontsize=10, loc="upper right", framealpha=0.93,
           edgecolor="#dddddd")
 
-# ---- Title ----
+# title
 ax.set_title("Corotation E×B drift", fontsize=14, fontweight="bold", pad=10)
 
 fig.subplots_adjust(left=0.10, right=0.97, top=0.93, bottom=0.08)
 
-# =====================================================================
-# Animation
-# =====================================================================
+# animation
 N_FRAMES  = 220
 skip_anim = max(1, len(t_s) // N_FRAMES)
 

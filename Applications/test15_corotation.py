@@ -8,23 +8,14 @@ from matplotlib import cm
 from orbit_ivp_core import simulate_orbit_ivp, extract_gc
 from fields import E_zero, E_corotation, B_dipole_cartesian
 
-# Figures directory — resolved relative to this script, so the script runs correctly from any working directory.
+# output directory
 _FIG = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "Figures")
 os.makedirs(_FIG, exist_ok=True)
 
 sns.set_theme(style="ticks", context="paper")
 
-# =============================================================
-# Test 15: Corotation E×B drift — aligned rotating dipole
-#
-# Adding the corotation electric field E = -(Omega x r) x B
-# causes the guiding centre to co-rotate with the field line
-# at angular velocity Omega.  Gyration and bounce are unchanged
-# and sit on top of the azimuthal co-rotation drift.
-#
-# Run for HALF a corotation period — enough to see the drift
-# clearly without the trajectory overlapping itself.
-# =============================================================
+# Test 15: corotation ExB drift
+# Check: GC co-rotates at angular velocity Omega with corotation E field
 
 q, m  = 1.0, 1.0
 M     = 500.0
@@ -47,7 +38,7 @@ Omega_gyro = abs(q) * np.linalg.norm(B0_vec) / m
 T_gyro     = 2.0 * np.pi / Omega_gyro
 T_b_est    = 4.0 * r0[0] / abs(np.dot(v0, bhat))
 T_cor      = 2.0 * np.pi / Omega
-T_run      = 0.5 * T_cor         # half corotation — cleaner figure
+T_run      = 0.5 * T_cor         # half corotation period
 dt         = min(T_b_est / 500.0, 0.05 * T_gyro)
 nsteps     = int(T_run / dt) + 1
 skip       = max(1, int(round(T_gyro / dt)))
@@ -64,7 +55,7 @@ t, traj = simulate_orbit_ivp(
 )
 print("done.")
 
-# Run B: same parameters but no E field — isolates gradient+curvature drift
+# no-E run for comparison
 print("Integrating (no E field, gradient+curvature drift only) ...")
 t_noE, traj_noE = simulate_orbit_ivp(
     state0=state0, dt=dt, nsteps=nsteps,
@@ -73,15 +64,15 @@ t_noE, traj_noE = simulate_orbit_ivp(
 )
 print("done.")
 
-# Guiding-centre positions extracted analytically
+# GC positions
 gc     = extract_gc(traj,    t,    B_func, q=q, m=m)
 gc_noE = extract_gc(traj_noE, t_noE, B_func, q=q, m=m)
 
-# Decimate for plotting (one point per gyration keeps plots readable)
+# decimate for plotting
 x_gc = gc[::skip, 0];    y_gc = gc[::skip, 1];    z_gc = gc[::skip, 2];    t_gc = t[::skip]
 x_gc_noE = gc_noE[::skip, 0];  y_gc_noE = gc_noE[::skip, 1];  t_gc_noE = t_noE[::skip]
 
-# Measure actual co-rotation rate from linear fit to phi(t)
+# measure co-rotation rate
 phi_gc     = np.unwrap(np.arctan2(y_gc, x_gc))
 phi_gc_noE = np.unwrap(np.arctan2(y_gc_noE, x_gc_noE))
 n          = len(phi_gc)
@@ -97,31 +88,29 @@ print(f"E×B contribution: ΔΩ = {Omega_meas - Omega_meas_noE:.5f} rad/unit-tim
 norm      = Normalize(vmin=t_gc.min(), vmax=t_gc.max())
 cmap_used = cm.plasma
 
-# ======================================================================
-# Plot 1: Top-down x-y view — clean, uncluttered
-# ======================================================================
+# x-y view
 fig1, ax1 = plt.subplots(figsize=(7, 7))
 
-# L-shell reference circle
+# L-shell circle
 theta = np.linspace(0, 2 * np.pi, 500)
 ax1.plot(r0[0] * np.cos(theta), r0[0] * np.sin(theta),
          "k--", lw=0.8, alpha=0.4, zorder=1, label=f"$L = {r0[0]:.0f}$ reference circle")
 
-# With-E trajectory coloured by time
+# trajectory coloured by time
 for i in range(len(x_gc) - 1):
     c = cmap_used(norm(0.5 * (t_gc[i] + t_gc[i + 1])))
     ax1.plot(x_gc[i:i+2], y_gc[i:i+2], color=c, lw=2.2, zorder=3)
 
-# Planet — clean filled circle
+# planet
 theta_p = np.linspace(0, 2 * np.pi, 200)
 ax1.fill(np.cos(theta_p), np.sin(theta_p), color="lightsteelblue", zorder=5)
 ax1.plot(np.cos(theta_p), np.sin(theta_p), color="#666666", lw=0.8, zorder=6)
 
-# Start marker
+# start marker
 ax1.plot(r0[0], 0, "o", color="k", ms=6, zorder=9)
 ax1.text(r0[0] + 0.12, 0.18, "Start", fontsize=8, color="k")
 
-# Rotation arm — crimson arrow from origin to the planet rotation endpoint
+# rotation arm arrow
 phi_end = Omega * t_gc[-1]
 ax1.annotate("",
              xy=(r0[0]*np.cos(phi_end), r0[0]*np.sin(phi_end)),
@@ -129,11 +118,19 @@ ax1.annotate("",
              arrowprops=dict(arrowstyle="-|>", color="crimson", lw=1.8),
              zorder=7)
 
+# swept arc
+R_arm = r0[0] - 0.6
+phi_arm = np.linspace(0, phi_end, 300)
+ax1.plot(R_arm*np.cos(phi_arm), R_arm*np.sin(phi_arm),
+         color="crimson", lw=2.5, ls="-", alpha=0.7, zorder=4)
+ax1.plot(R_arm*np.cos(phi_end), R_arm*np.sin(phi_end),
+         "o", color="crimson", ms=5, zorder=4)
+
 sm = cm.ScalarMappable(cmap=cmap_used, norm=norm)
 sm.set_array([])
 plt.colorbar(sm, ax=ax1, label="t (code units)", shrink=0.8)
 
-# Legend entries — dummy handles for the legend
+# legend
 from matplotlib.lines import Line2D
 legend_handles = [
     Line2D([0], [0], color="crimson", lw=1.8, linestyle="-",
@@ -156,9 +153,7 @@ plt.savefig(os.path.join(_FIG, "test15_corotation_xy.png"), dpi=300)
 plt.close()
 print("Saved test15_corotation_xy.png")
 
-# ======================================================================
-# Plot 2: z(t) — bounce persists under co-rotation
-# ======================================================================
+# Plot 2: z(t) bounce under co-rotation
 fig2, ax2 = plt.subplots(figsize=(9, 3.5))
 ax2.plot(t_gc, z_gc, lw=0.9, color="C0")
 ax2.axhline(0, color="gray", lw=0.6, ls="--")

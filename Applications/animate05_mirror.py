@@ -1,12 +1,4 @@
-"""
-animate05_mirror.py
-===================
-Animated magnetic mirror bounce.
-Shows: particle spiralling in a converging (mirror) field, reflecting at the
-strong-field ends (mirror points), bouncing back and forth.
-3D view with field lines that converge toward the ends.
-Saves: ../Figures/animate05_mirror.gif
-"""
+"""Animate magnetic mirror bounce in a converging field."""
 
 import os
 import numpy as np
@@ -19,7 +11,7 @@ from orbit_ivp_core import simulate_orbit_ivp, extract_gc, q, m
 _DIR = os.path.dirname(os.path.abspath(__file__))
 from fields import E_zero, B_mirror_div_free
 
-# ---- Parameters (match test05) ----
+# parameters (same as test05)
 B0    = 1.0
 alpha = 0.5      # controls how quickly B strengthens away from z=0
 B_func = B_mirror_div_free(B0=B0, alpha=alpha)
@@ -28,7 +20,7 @@ omega  = abs(q) * B0 / m
 T_gyro = 2 * np.pi / omega
 r_L    = 1.0
 v_perp = r_L * omega
-v_par  = 0.5 * v_perp   # moderate pitch — gives clear bounce
+v_par  = 0.5 * v_perp   # moderate pitch angle
 
 # Choose ICs so GC starts on the z-axis (origin):
 # At z=0, B=(0,0,B0). GC = r + (m/qB²)(v×B).
@@ -70,8 +62,8 @@ mirrors = np.where(np.diff(np.sign(vz)))[0]
 print(f"Mirror points detected: {len(mirrors)} at z = {r[mirrors, 2]}")
 print("Done.")
 
-# ---- Build converging field lines ----
-# Field line for B_mirror_div_free: x(z) = x0/sqrt(1 + alpha*z²)
+# build converging field lines
+# x(z) = x0/sqrt(1 + alpha*z^2)
 z_fl    = np.linspace(-z_mirror * 1.4, z_mirror * 1.4, 300)
 r_starts = [0.5, 1.0, 1.5, 2.0]   # starting radii at z=0
 phi_vals = np.linspace(0, 2 * np.pi, 10, endpoint=False)
@@ -84,7 +76,7 @@ for r0_fl in r_starts:
         yf    = r0_fl * np.sin(phi_f) * scale
         fl_data.append((xf, yf, z_fl))
 
-# ---- Figure ----
+# figure setup
 fig = plt.figure(figsize=(12, 8))
 ax  = fig.add_subplot(111, projection="3d")
 ax.set_facecolor("white")
@@ -93,7 +85,7 @@ ax.set_facecolor("white")
 for xf, yf, zf in fl_data:
     ax.plot(xf, yf, zf, color="#888888", lw=1.1, alpha=0.3)
 
-# Mirror plane indicators (horizontal rings at ±z_mirror)
+# mirror plane rings
 theta_r = np.linspace(0, 2 * np.pi, 80)
 r_ring  = r_starts[-1] / np.sqrt(1 + alpha * z_mirror**2) * 1.1
 for zm in [z_mirror, -z_mirror]:
@@ -102,7 +94,7 @@ for zm in [z_mirror, -z_mirror]:
 ax.text(r_ring + 0.1, 0, z_mirror, "mirror", color="crimson", fontsize=8)
 ax.text(r_ring + 0.1, 0, -z_mirror, "mirror", color="crimson", fontsize=8)
 
-# Full trajectory (faint)
+# faint full orbit for reference
 ax.plot(r[:, 0], r[:, 1], r[:, 2], lw=0.4, alpha=0.12, color="gray")
 
 # Animated artists
@@ -112,7 +104,7 @@ gc_trail,= ax.plot([], [], [], lw=1.8, color="C1", label="Guiding centre")
 dot,     = ax.plot([], [], [], "o", color="C0", ms=5, zorder=10)
 gc_dot,  = ax.plot([], [], [], "s", color="C1", ms=6, zorder=10)
 
-# Mirror point flash (green dot at GC position)
+# mirror point flash
 mirror_dot, = ax.plot([], [], [], "o", color="limegreen", ms=12,
                        zorder=12, alpha=0, label="Mirror point!")
 

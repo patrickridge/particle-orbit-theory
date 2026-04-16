@@ -8,27 +8,21 @@ from scipy.optimize import brentq
 from orbit_ivp_core import simulate_orbit_ivp
 from fields import E_zero, B_dipole_cartesian
 
-# Figures directory — resolved relative to this script, so the script runs correctly from any working directory.
+# output directory
 _FIG = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "Figures")
 os.makedirs(_FIG, exist_ok=True)
 
 sns.set_theme(style="ticks", context="paper")
 
-# =============================================================
-# Test 10: Cross-check — analytic vs numerical bounce period
-#
-# Runs a full numerical orbit in the dipole field and detects mirror crossings,
-# then compares the measured bounce period to the analytic Schulz & Lanzerotti
-# formula. Confirms adiabatic theory matches the simulation.
-# =============================================================
+# Test 10: analytic vs numerical bounce period
+# Check: measured bounce period matches Schulz & Lanzerotti formula
 
-# ---- Dimensionless parameters matching orbit code -------------------
+# parameters
 q   = 1.0
 m   = 1.0
 M   = 500.0   # dipole moment — matches test08/11 (M=5 was non-adiabatic: T_b/T_gyro < 1)
 
-# Equatorial |B| at r = r_eq is |B_eq| = M/r_eq^3 (on-axis formula)
-# For a particle starting at r_eq = 3 (code units), B_eq ≈ M/r_eq^3
+# equatorial |B|
 r_eq = 3.0
 B_eq = M / r_eq**3    # |B| at equatorial crossing (code units)
 
@@ -36,7 +30,7 @@ v_mag     = 1.0
 pitch_deg = 60.0
 pitch_rad = np.deg2rad(pitch_deg)
 
-# ---- Analytic bounce period (dimensionless) --------------------------
+# analytic bounce period
 
 def B_over_Beq_dipole(lam):
     """B(lambda)/B_eq for a dipole field along a field line."""
@@ -72,7 +66,7 @@ print(f"Pitch angle:           {pitch_deg:.1f}°")
 print(f"Mirror latitude:       {lam_m_deg:.2f}°")
 print(f"Analytic bounce period: {tau_b_analytic:.4f}  (code time units)")
 
-# ---- Numerical orbit -------------------------------------------------
+# numerical orbit
 B_func = B_dipole_cartesian(M=M)
 E_func = E_zero
 
@@ -80,7 +74,7 @@ r0   = np.array([r_eq, 0.0, 0.0])    # start exactly at equatorial plane
 B0v  = B_func(r0, 0.0)
 bhat = B0v / np.linalg.norm(B0v)
 
-# Build perpendicular direction
+# perp direction
 a = np.array([0.0, 0.0, 1.0])
 if abs(np.dot(a, bhat)) > 0.9:
     a = np.array([0.0, 1.0, 0.0])
@@ -90,7 +84,7 @@ eperp = eperp / np.linalg.norm(eperp)
 v0     = v_mag * (np.cos(pitch_rad) * bhat + np.sin(pitch_rad) * eperp)
 state0 = np.concatenate((r0, v0))
 
-# Run for several bounce periods
+# run for several bounce periods
 T_run  = 6.0 * tau_b_analytic
 dt     = 0.001
 nsteps = int(T_run / dt)
@@ -102,7 +96,7 @@ t, traj = simulate_orbit_ivp(state0=state0, dt=dt, nsteps=nsteps,
 r = traj[:, :3]
 v = traj[:, 3:]
 
-# ---- Compute v_∥ and detect zero-crossings --------------------------
+# v_par and zero-crossings
 vpar = np.zeros(len(t))
 Bmag = np.zeros(len(t))
 
@@ -116,7 +110,7 @@ sign_changes = np.where(np.diff(np.sign(vpar)))[0]
 mirror_times = t[sign_changes]
 
 if len(sign_changes) >= 4:
-    # Full bounce = two consecutive zero crossings
+    # full bounce = two zero crossings
     full_period_estimates = np.diff(mirror_times[::2])
     tau_b_num = np.mean(full_period_estimates)
     print(f"Numerical bounce period: {tau_b_num:.4f}  (mean over "
@@ -126,9 +120,7 @@ else:
     tau_b_num = np.nan
     print("Fewer than 4 mirror crossings — increase T_run.")
 
-# ======================================================================
-# Plot 1: z(t) with mirror points and period annotation
-# ======================================================================
+# z(t) plot
 fig, ax = plt.subplots(figsize=(9, 4))
 ax.plot(t, r[:, 2], lw=1.0, label="z(t)")
 if len(sign_changes) >= 1:
@@ -146,9 +138,7 @@ plt.tight_layout()
 plt.savefig(os.path.join(_FIG, "test10_bounce_period_check.png"), dpi=300)
 plt.show()
 
-# ======================================================================
-# Plot 2: v_∥(t)
-# ======================================================================
+# v_par(t) plot
 fig, ax = plt.subplots(figsize=(9, 3))
 ax.plot(t, vpar, lw=0.9)
 ax.axhline(0.0, color="k", lw=0.6, ls="--")
@@ -162,9 +152,7 @@ plt.tight_layout()
 plt.savefig(os.path.join(_FIG, "test10_bounce_vpar.png"), dpi=300)
 plt.show()
 
-# ======================================================================
-# Plot 3 (optional): Bounce period vs pitch angle — sweep
-# ======================================================================
+# bounce period vs pitch angle sweep
 pitch_degs = np.array([20, 30, 40, 50, 60, 70, 80])
 tau_analytic_arr = []
 for adeg in pitch_degs:

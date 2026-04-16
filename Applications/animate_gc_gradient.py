@@ -1,18 +1,4 @@
-"""
-animate_gc_gradient.py
-======================
-Guiding-centre in a non-uniform magnetic field.
-
-Field: Bz(x) = B0*(1 + eps*x) — increases to the right.
-Field lines (B out of page) are shown as vertical lines whose spacing
-is inversely proportional to B — denser spacing = stronger field.
-
-The Larmor radius r_L = mv_perp / qB is larger where B is weaker (left)
-and smaller where B is stronger (right). The orbit is asymmetric so the
-guiding centre drifts steadily upward.
-
-Saves: ../Figures/animate_gc_gradient.gif
-"""
+"""Animate guiding-centre drift in a gradient B field."""
 
 import os
 import numpy as np
@@ -24,10 +10,10 @@ from fields import E_zero, B_gradx_z
 
 _DIR = os.path.dirname(os.path.abspath(__file__))
 
-# ---- Parameters ----
+# parameters
 q, m  = 1.0, 1.0
 B0    = 1.0
-eps   = 0.28          # clear gradient: B varies ~±30% across the plot
+eps   = 0.28          # gradient strength
 
 B_func  = B_gradx_z(B0=B0, eps=eps)
 Omega_c = abs(q) * B0 / m
@@ -52,15 +38,12 @@ r  = traj[:, :3]
 gc = extract_gc(traj, t, B_func, q=q, m=m)
 print("Done.")
 
-# ---- Axis limits ----
+# axis limits
 pad   = 1.6
 x_min = r[:, 0].min() - pad;  x_max = r[:, 0].max() + pad
 y_min = r[:, 1].min() - pad;  y_max = r[:, 1].max() + pad + 0.5
 
-# ---- Field lines: vertical lines spaced by 1/B(x) ----
-# Place N_lines lines so their x-positions are uniform in "flux" space:
-# cumulative flux F(x) = integral_x0^x B(x') dx' = B0*(x + eps*x^2/2)
-# Invert to get x given F.
+# field lines spaced by 1/B(x) using flux inversion
 N_lines = 22
 x0 = x_min
 F_of_x  = lambda x: B0 * (x + eps * x**2 / 2.0)
@@ -77,12 +60,12 @@ for F in F_steps:
     disc = b**2 - 4*a*c
     line_x.append((-b + np.sqrt(disc)) / (2*a))
 
-# ---- Figure ----
+# figure setup
 fig, ax = plt.subplots(figsize=(8, 9))
 fig.patch.set_facecolor("white")
 ax.set_facecolor("#F5F8FF")   # very faint blue tint
 
-# Background gradient (subtle, field lines carry the main visual)
+# background gradient
 grad = np.linspace(0, 1, 300).reshape(1, -1)
 ax.imshow(grad, aspect="auto", cmap="Blues", alpha=0.20,
           extent=[x_min, x_max, y_min, y_max], origin="lower")
@@ -92,7 +75,7 @@ for lx in line_x:
     ax.plot([lx, lx], [y_min, y_max],
             color="steelblue", lw=1.0, alpha=0.55)
 
-# ⊙ symbol in bottom-left: circle with central dot showing B out of page
+# B out of page symbol
 import matplotlib.patches as mpatches
 odot_x = x_min + 0.55
 odot_y = y_min + 0.55
@@ -122,10 +105,10 @@ ax.set_title("Guiding Centre in a non-uniform magnetic field",
              fontsize=12, fontweight="bold", pad=10)
 ax.tick_params(labelsize=10)
 
-# Faint full-orbit ghost so the asymmetric loops are visible throughout
+# faint full orbit for reference
 ax.plot(r[:, 0], r[:, 1], lw=0.5, alpha=0.12, color="C0")
 
-# ---- Animated artists ----
+# animated artists
 TRAIL       = 220
 trail_part, = ax.plot([], [], lw=1.0, alpha=0.5, color="#4488CC",
                       label="Particle orbit")

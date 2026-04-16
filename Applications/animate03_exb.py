@@ -1,12 +1,5 @@
 import os
-"""
-animate03_exb.py
-================
-Animated E×B drift in uniform perpendicular fields.
-Shows: cycloid orbit with E, guiding centre drift.
-2D top-down view (xy plane), B pointing out of screen.
-Saves: ../Figures/animate03_exb.gif
-"""
+"""Animate E x B drift in crossed uniform fields."""
 
 import numpy as np
 import matplotlib.pyplot as plt
@@ -15,11 +8,11 @@ import matplotlib.animation as animation
 from orbit_ivp_core import simulate_orbit_ivp, q, m
 from fields import E_const, B_uniform_z
 
-# Figures directory — resolved relative to this script.
+# output directory
 _FIG = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "Figures")
 os.makedirs(_FIG, exist_ok=True)
 
-# ---- Parameters ----
+# parameters
 B0, E0 = 1.0, 0.2
 B_func = B_uniform_z(B0)
 E_func = E_const([E0, 0.0, 0.0])   # E along x
@@ -43,11 +36,10 @@ t, traj = simulate_orbit_ivp(state0=state0, dt=dt, nsteps=nsteps,
 print(f"Done. {len(t)} points over {T_run:.1f} time units ({T_run/T_gyro:.0f} gyrations).")
 
 # GC trajectory: starts at (0, -r_L), drifts in -y
-# At t=0 the particle is r_L above the GC (force is initially in -y so GC is below)
 xgc = np.zeros_like(t)
 ygc = -r_L - v_exb_mag * t
 
-# ---- Figure ----
+# figure setup
 fig, ax = plt.subplots(figsize=(6, 8))
 ax.set_facecolor("white")
 
@@ -59,10 +51,10 @@ ax.text(1.5, 6.0, r"$\mathbf{E}$", color="crimson", fontsize=14, va="center")
 ax.text(3.2, 6.0, "⊙", fontsize=20, color="steelblue", va="center", ha="center")
 ax.text(3.9, 6.0, r"$\mathbf{B}$", color="steelblue", fontsize=14, va="center")
 
-# Faint full path for reference
+# faint full orbit for reference
 ax.plot(traj[:, 0], traj[:, 1], lw=0.5, alpha=0.12, color="C1")
 
-# Animated — cycloid trail + dot
+# animated trail + dot
 TRAIL = 120
 trail, = ax.plot([], [], lw=1.8, color="C1", alpha=0.9, label="Particle (cycloid)")
 dot,   = ax.plot([], [], "o", color="C1", ms=7, zorder=10)

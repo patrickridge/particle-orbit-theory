@@ -4,34 +4,29 @@ import matplotlib.pyplot as plt
 import matplotlib.patches as mpatches
 import seaborn as sns
 
-# Figures directory — resolved relative to this script, so the script runs correctly from any working directory.
+# output directory
 _FIG = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "Figures")
 os.makedirs(_FIG, exist_ok=True)
 
 sns.set_theme(style="ticks", context="paper")
 
-# =============================================================
-# Test 12: Dipole field line geometry (reproduces B&T Fig 3.2)
-#
-# Plots magnetic field lines for several L-shells in the meridional (x-z) plane,
-# using the dipole field-line equation r = L cos^2(lambda).
-# Expected: smooth curves from southern to northern hemisphere, Earth at centre.
-# =============================================================
+# Test 12: dipole field line geometry (cf. B&T Fig 3.2)
+# Check: field lines follow r = L cos^2(lambda)
 
-# L-shells to plot
+# L-shells
 L_shells = [1.5, 2.0, 3.0, 4.0, 5.0, 6.0]
 
 fig, ax = plt.subplots(figsize=(7, 8))
 
-# ---- Earth -----------------------------------------------------------
+# Earth
 theta_e = np.linspace(0, 2 * np.pi, 300)
 ax.fill(np.cos(theta_e), np.sin(theta_e),
         color="lightgray", zorder=3, label="Earth ($R_E$)")
 ax.plot(np.cos(theta_e), np.sin(theta_e), "k-", lw=1.2, zorder=4)
 
-# ---- Dipole field lines ----------------------------------------------
+# field lines
 for L in L_shells:
-    # Latitude range: from -lambda_E to +lambda_E (outside Earth's surface)
+    # latitude range outside Earth's surface
     lam_E = np.arccos(np.sqrt(1.0 / L))   # latitude where field line hits Earth
     lam   = np.linspace(-lam_E, lam_E, 600)
 
@@ -39,19 +34,19 @@ for L in L_shells:
     x = r * np.cos(lam)
     z = r * np.sin(lam)
 
-    # Right half (x > 0) and left half (x < 0) of meridional plane
+    # both halves of meridional plane
     ax.plot( x, z, "b-", lw=1.0, zorder=2)
     ax.plot(-x, z, "b-", lw=1.0, zorder=2)
 
-    # Label each L-shell at its equatorial crossing
+    # label
     ax.text(L + 0.08, 0.0, f"$L={L}$", fontsize=7,
             va="center", ha="left", color="navy")
 
-# ---- Axes and annotations --------------------------------------------
+# annotations
 ax.axhline(0.0, color="gray", lw=0.7, ls="--", zorder=1)   # equatorial plane
 ax.axvline(0.0, color="gray", lw=0.7, ls=":",  zorder=1)   # dipole axis
 
-# Annotate r_eq on the equatorial plane (for L=4 as example)
+# r_eq annotation
 L_annot = 4.0
 ax.annotate(
     "", xy=(L_annot, 0), xytext=(0, 0),
@@ -60,7 +55,7 @@ ax.annotate(
 )
 ax.text(L_annot / 2, 0.25, r"$r_{eq}$", ha="center", fontsize=10)
 
-# Annotate lambda (magnetic latitude) on one field line
+# lambda annotation
 L_lam = 3.0
 lam_annot = np.deg2rad(35)
 r_annot = L_lam * np.cos(lam_annot)**2
@@ -71,16 +66,16 @@ ax.annotate(
     arrowprops=dict(arrowstyle="-", color="k", lw=0.8, linestyle="dashed"),
     zorder=5
 )
-# Draw arc for lambda angle
+# arc for lambda
 arc_r = 0.8
 lam_arc = np.linspace(0, lam_annot, 50)
 ax.plot(arc_r * np.cos(lam_arc), arc_r * np.sin(lam_arc), "k-", lw=0.9)
 ax.text(0.55, 0.22, r"$\lambda$", ha="center", fontsize=11)
 
-# Label r on the L=3 field line
+# r label
 ax.text(x_a + 0.15, z_a / 2, r"$r$", ha="left", fontsize=11)
 
-# ---- Formatting ------------------------------------------------------
+# formatting
 ax.set_xlabel(r"$x$ / $R_E$", fontsize=11)
 ax.set_ylabel(r"$z$ / $R_E$", fontsize=11)
 ax.set_title("Dipolar magnetic field lines\n"

@@ -1,22 +1,5 @@
 import os
-"""
-animate16_rotating.py
-=====================
-Physics message (one figure, one idea):
-  When the dipole is tilted AND rotating, the magnetic geometry changes
-  with time in the lab frame.  The guiding-centre orbit is no longer a
-  simple ring — it traces a complex asymmetric 3D path.
-
-Visual priorities:
-  1. GC trail colour varies with time (plasma: dark=early, bright=recent)
-     so the audience can read the direction and history of the motion.
-  2. Eight field lines (two L-shells, four azimuths) give enough 3D shape
-     without dominating the figure.
-  3. Two labels only: rotation axis, tilted magnetic axis.
-  4. Camera angle chosen to make the tilt immediately obvious.
-
-Saves: ../Figures/animate16_rotating.gif
-"""
+"""Animate GC orbit in a rotating tilted dipole."""
 
 import numpy as np
 import matplotlib.pyplot as plt
@@ -27,7 +10,7 @@ from mpl_toolkits.mplot3d.art3d import Line3DCollection
 from orbit_ivp_core import simulate_orbit_ivp, extract_gc
 from fields import B_dipole_rotating, E_corotation
 
-# ---- Parameters -------------------------------------------------------
+# parameters
 q, m     = 1.0, 1.0
 M        = 500.0
 Omega    = 0.02
@@ -68,7 +51,7 @@ gc_s    = extract_gc(traj, t, B_func, q=q, m=m)[::skip_gc]
 t_s     = t[::skip_gc]
 print(f"Done.  GC points: {len(t_s)}")
 
-# ---- Field lines — two L-shells, four azimuths = 8 lines -------------
+# field lines (two L-shells, four azimuths)
 cos_tilt = np.cos(theta_rad)
 sin_tilt = np.sin(theta_rad)
 lam_fl   = np.linspace(-1.3, 1.3, 220)
@@ -89,17 +72,17 @@ for phi_f in phi_fl:
         xg0[below] = np.nan; yg0[below] = np.nan; zg0[below] = np.nan
         fl_ref.append((xg0, yg0, zg0))
 
-# ---- Trail colour map — plasma: dark purple (old) → bright (recent) --
+# trail colour map
 cmap_trail = plt.cm.plasma
 
 
 def make_segments(xs, ys, zs):
-    """Pack x/y/z arrays into (N-1, 2, 3) segment array for Line3DCollection."""
+    """Pack x/y/z into segments for Line3DCollection."""
     pts  = np.c_[xs, ys, zs].reshape(-1, 1, 3)
     return np.concatenate([pts[:-1], pts[1:]], axis=1)
 
 
-# ---- Figure -----------------------------------------------------------
+# figure setup
 fig = plt.figure(figsize=(10, 8))
 fig.patch.set_facecolor("white")
 ax = fig.add_axes([0.02, 0.02, 0.96, 0.89], projection="3d")
@@ -117,7 +100,7 @@ ax.plot_surface(
 
 ax_len = 0.85 * L0
 
-# Rotation axis — thin grey line + small arrow tip
+# rotation axis
 ax.plot([0, 0], [0, 0], [-ax_len, ax_len * 1.15],
         color="#999999", lw=1.4, zorder=2)
 ax.quiver(0, 0, ax_len * 0.95, 0, 0, ax_len * 0.25,
@@ -125,31 +108,31 @@ ax.quiver(0, 0, ax_len * 0.95, 0, 0, ax_len * 0.25,
 ax.text(0.22, 0, ax_len * 1.22, "Rotation axis",
         fontsize=9, color="#777777", ha="left", va="bottom")
 
-# ---- Mutable artists --------------------------------------------------
+# mutable artists
 
-# Eight field lines (rotated each frame)
+# field lines (rotated each frame)
 fl_artists = []
 for _ in fl_ref:
     line, = ax.plot([], [], [],
                     color="#4477aa", lw=0.9, alpha=0.28, zorder=1)
     fl_artists.append(line)
 
-# GC trail — replaced each frame with a fresh Line3DCollection
+# GC trail (replaced each frame)
 trail_coll = [None]   # mutable reference so update() can remove previous
 
-# GC current-position dot
+# GC dot
 gc_dot, = ax.plot([], [], [], "o",
                   color=cmap_trail(0.92), ms=9, zorder=6,
                   markeredgecolor="white", markeredgewidth=1.5)
 
-# Magnetic axis arrow (rotates with planet)
+# magnetic axis arrow
 mag_ax_q = [ax.quiver(
     0, 0, 0,
     ax_len * np.sin(theta_rad), 0, ax_len * np.cos(theta_rad),
     color="crimson", lw=2.2, arrow_length_ratio=0.20, zorder=4,
 )]
 
-# ---- Axes — clean 3D frame, no numeric ticks -------------------------
+# axes
 ax.set_xlim(-4.2, 4.2)
 ax.set_ylim(-4.2, 4.2)
 ax.set_zlim(-3.2, 3.2)
@@ -166,7 +149,7 @@ fig.suptitle("Guiding-centre motion in a rotating tilted dipole",
 
 ax.view_init(elev=20, azim=-70)
 
-# ---- Two direct labels only ------------------------------------------
+# labels
 ax.text2D(0.78, 0.86, f"Tilted magnetic axis ({tilt_deg:.0f}°)",
           transform=ax.transAxes, fontsize=10, color="crimson",
           ha="right", va="top")
@@ -174,16 +157,16 @@ ax.text2D(0.78, 0.79, "Guiding-centre orbit",
           transform=ax.transAxes, fontsize=10, color=cmap_trail(0.75),
           ha="right", va="top")
 
-# Rotation progress — tiny, bottom-right
+# rotation progress text
 time_txt = ax.text2D(0.97, 0.03, "0%",
                      transform=ax.transAxes, fontsize=9,
                      ha="right", va="bottom", color="#888888")
 
-# Small colorbar showing trail = time (dark early, bright recent)
+# colorbar for time
 from matplotlib.cm import ScalarMappable
 from matplotlib.colors import Normalize as MplNorm
 
-# Figures directory — resolved relative to this script.
+# output directory
 _FIG = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "Figures")
 os.makedirs(_FIG, exist_ok=True)
 _sm = ScalarMappable(cmap=cmap_trail, norm=MplNorm(vmin=0, vmax=1))
@@ -197,13 +180,13 @@ cbar.outline.set_edgecolor("#cccccc")
 cbar.ax.set_title("time", fontsize=8, color="#555555", pad=3)
 
 
-# ---- Helper -----------------------------------------------------------
+# helper
 def rotate_z(x, y, angle):
     c, s = np.cos(angle), np.sin(angle)
     return x * c - y * s, x * s + y * c
 
 
-# ---- Animation --------------------------------------------------------
+# animation
 N_FRAMES  = 200
 skip_anim = max(1, len(t_s) // N_FRAMES)
 
@@ -228,7 +211,7 @@ def update(frame):
                              color="crimson", lw=2.2,
                              arrow_length_ratio=0.20, zorder=4)
 
-    # Remove previous trail collection and draw a fresh one
+    # redraw trail
     if trail_coll[0] is not None:
         trail_coll[0].remove()
         trail_coll[0] = None
@@ -245,7 +228,7 @@ def update(frame):
         ax.add_collection3d(coll)
         trail_coll[0] = coll
 
-    # Current position dot — matches bright end of colormap
+    # current position dot
     gc_dot.set_data([gc_s[j, 0]], [gc_s[j, 1]])
     gc_dot.set_3d_properties([gc_s[j, 2]])
 

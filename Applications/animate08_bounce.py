@@ -1,11 +1,4 @@
-"""
-animate08_bounce.py
-===================
-Animation of a charged particle bouncing in a dipole magnetic field.
-Shows: gyration around field lines, bounce between mirror points (flash),
-slow azimuthal drift. Camera slowly rotates.
-Saves:  ../Figures/animate08_bounce.gif
-"""
+"""Animate particle bounce motion in a dipole field."""
 
 import os
 import numpy as np
@@ -18,7 +11,7 @@ from orbit_ivp_core import simulate_orbit_ivp, extract_gc
 _DIR = os.path.dirname(os.path.abspath(__file__))
 from fields import E_zero, B_dipole_cartesian
 
-# ---- Parameters (same as test08) ----
+# parameters (same as test08)
 q, m, M = 1.0, 1.0, 50.0
 B_func  = B_dipole_cartesian(M=M)
 
@@ -35,16 +28,15 @@ T_gyro     = 2.0 * np.pi / Omega_gyro
 v_par_mag  = v_mag * np.cos(pitch)
 T_b_est    = 4.0 * r0[0] / v_par_mag
 
-# Azimuthal grad+curv drift rate in equatorial dipole (Baumjohann & Treumann §2.3)
-# Ω_drift = 3 v² (1 + sin²α/2) / (2 Ω_gyro r²)
+# azimuthal drift rate estimate
 sin_p       = np.sin(pitch)
 Omega_drift = 3.0 * v_mag**2 * (1.0 + sin_p**2 / 2.0) / (2.0 * Omega_gyro * r0[0]**2)
 T_drift     = 2.0 * np.pi / Omega_drift
-# Neptune rotation period ≈ 16.11 hr = 58 000 s (comment only — code units are dimensionless)
+# Neptune rotation period in seconds
 T_Neptune_s = 58000.0
 ratio_drift = T_drift / T_Neptune_s
 
-# ~30 points per gyration for smooth animation
+# ~30 points per gyration
 dt_anim = T_gyro / 30.0
 T_run   = 2.5 * T_b_est
 nsteps  = int(T_run / dt_anim)
@@ -67,7 +59,7 @@ mirror_t = t_sub[np.where(np.diff(np.sign(vpar)))[0]]
 print(f"Mirror points at t ≈ {mirror_t}")
 print("Done.")
 
-# ---- Build figure ----
+# figure setup
 fig = plt.figure(figsize=(10, 8))
 ax  = fig.add_subplot(111, projection="3d")
 ax.set_facecolor("white")
@@ -116,7 +108,7 @@ ax.set_title(f"Particle orbit in dipole field \n"
              "Gyration · Bounce · Azimuthal drift", fontsize=10)
 ax.legend(fontsize=8, loc="upper right")
 
-# Subsample to ≤200 animation frames
+# subsample for animation
 N_FRAMES = 200
 skip     = max(1, len(t) // N_FRAMES)
 

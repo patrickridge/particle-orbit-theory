@@ -51,7 +51,7 @@ A field that gets stronger toward the ends acts like a magnetic bottle — the p
 
 ## test06 — Analytic bounce periods (dipole)
 
-Computes bounce periods analytically using the Schulz & Lanzerotti formula — no simulation, just numerical integration of the bounce integral. Shows how bounce period varies with L-shell and equatorial pitch angle for a 10 keV electron.
+Computes bounce periods analytically using the standard bounce-period integral — no simulation, just numerical quadrature. Shows how bounce period varies with L-shell and equatorial pitch angle for a 10 keV electron.
 
 **Key result:** Bounce period increases with L-shell, decreases for larger pitch angles. Test 10 verifies these numbers.
 
@@ -140,121 +140,27 @@ Adds the corotation electric field E = −(Ω×r)×B to an aligned dipole. Two r
 
 The full simulation combining test14 and test15: a Neptune-like tilted dipole (47°) whose moment rotates about z at Ω = 0.02, plus the corotation electric field E = −(Ω×r)×B(r,t). B is now time-varying (both tilt and rotation are required to induce a time-dependent B via Faraday's law). The integrator evaluates B at each timestep automatically.
 
-Starting position is at the magnetic equatorial plane (r₀ = L·(cosθ, 0, −sinθ)) for consistency with test14. GC extracted via `extract_gc`. All three adiabatic motions — gyration, bounce, co-rotation — are present simultaneously. The 3D plot includes tilted dipole field lines (rotated to geographic frame at t=0) for geometric context.
+Start on the magnetic equatorial plane (r₀ = L·(cosθ, 0, −sinθ)), same as test14. GC extracted via `extract_gc`. All three motions — gyration, bounce, co-rotation — present simultaneously. 3D plot includes tilted field lines at t=0.
 
 **Key result:** GC co-rotates at a rate slightly above Ω (gradient+curvature drift adds to E×B); z(t) shows bounce amplitude modulated by the rotating asymmetric field; 3D orbit shows the tilted drift shell sweeping around the rotation axis over one corotation period.
 
 ---
 
----
-
-## Key Physics Findings
-
-### Co-rotation: why the particle is slightly ahead of the planet
-
-The standard statement "particles co-rotate with the planet" is an approximation. The precise result is:
-
-**The E×B drift alone gives exact co-rotation at Ω** — for an aligned dipole, `v_ExB = (E×B)/B² = Ω×r` exactly.
-
-However, gradient and curvature drifts are always present on top of E×B, so:
-
-    Ω_total = Ω_ExB + Ω_grad + Ω_curv  >  Ω
-
-Measured values (M=500, L=3, pitch=45°):
-
-| Simulation | Measured Ω | Explanation |
-|-----------|------------|-------------|
-| test15, no E field | ~0.008 | Gradient+curvature drift only |
-| test15, with E field | ~0.027 | E×B + gradient+curvature |
-| Difference | ~0.019 | ≈ input Ω = 0.020 (96% recovery) |
-| test16 (tilted, rotating) | ~0.028 | E×B + gradient + tilt effect |
-
-In `animate15_corotation.gif` the GC appears ahead of the red planet arm (which rotates at exactly Ω = 0.02) because of this extra gradient drift contribution — this is correct physics, not a numerical error.
-
-The approximation is better for cold/slow particles (smaller μ → smaller gradient drift) and for the inner magnetosphere (strong E field dominates).
-
-### Why tilt + rotation together are required to induce an E field
-
-- **Aligned rotating dipole**: B is rotationally symmetric → ∂B/∂t = 0 → no Faraday-induced E.
-- **Tilted static dipole**: B is time-independent → ∂B/∂t = 0 → no induced E.
-- **Tilted + rotating dipole** (test16): B varies in time as the moment sweeps → ∂B/∂t ≠ 0 → Faraday's law induces E naturally.
-
-### Guiding-centre extraction vs decimation
-
-The formula `R_gc = r + (m/qB²)(v×B)` removes the Larmor radius exactly at every timestep regardless of gyration phase. Simple decimation (taking every N-th point) leaves residual oscillations because T_gyro/dt is never exactly an integer and B varies along the orbit. All tests from 08 onwards use `extract_gc` from `orbit_ivp_core`.
-
----
-
 ## Animation Scripts
 
-The following scripts produce animated GIFs saved to `../Figures/`. They use the same physical parameters as the corresponding test scripts. Run from inside the `Applications/` directory.
+These produce animated GIFs saved to `../Figures/`. Same physics as the corresponding test scripts.
 
----
-
-## animate02_helix — Helical motion animation
-
-Traces the helical orbit in real time in a 3D view with vertical field lines as background. The camera slowly rotates around the z-axis to show the 3D structure clearly.
-
-**Output:** `animate02_helix.gif` — for slide 4 (Uniform B field).
-
----
-
-## animate03_exb — E×B drift animation
-
-Top-down (x-y) view with B pointing out of the screen. Shows two orbits simultaneously: a circle (E = 0) and a cycloid (E = E₀x̂), with the guiding centre drifting in −y at v_ExB = E₀/B₀.
-
-**Output:** `animate03_exb.gif` — for slide 5 (Drift motions).
-
----
-
-## animate05_mirror — Magnetic mirror bounce animation
-
-3D view of a particle spiralling in the divergence-free mirror field B_mirror_div_free (field lines converge toward the ends). A bright green dot flashes at the mirror points each time the parallel velocity reverses. Initial conditions place the guiding centre on the z-axis so the particle stays centred in frame.
-
-**Output:** `animate05_mirror.gif` — for slide 7 (Mirror effect).
-
----
-
-## animate08_bounce — Dipole orbit animation
-
-3D dipole orbit showing all three motions simultaneously: gyration, bounce, and slow azimuthal drift. Dipole field lines and planet sphere are shown as static background. A green dot flashes at mirror points; the camera slowly rotates (0.8°/frame) for 3D perspective.
-
-**Output:** `animate08_bounce.gif` — for slide 8 (Three motions in dipole).
-
----
-
-## animate14_tilted — Tilted dipole comparison animation
-
-Side-by-side 3D subplots showing 0° (aligned, symmetric bounce) and 59° (Uranus-like, asymmetric bounce) simultaneously. Tilted field lines and planet sphere in each panel. The bounce asymmetry in geographic coordinates is immediately visible.
-
-**Output:** `animate14_tilted.gif` — for slide 9 (Tilted dipoles).
-
----
-
-## animate_earth_corotation — Corotation teaching figure (presentation version)
-
-Single top-down panel. One physics message: the corotation E×B drift locks the guiding centre to the rotating planet arm; magnetic drifts advance it slightly ahead.
-
-Two animated elements:
-- **Crimson dot** — pure corotation reference, stays exactly on the rotating arm (analytic: position = L(cos Ωt, sin Ωt))
-- **Orange dot** — full GC from simulation (E×B + gradient + curvature); drifts ahead of arm
-
-The growing angular gap between the two dots is the magnetic drift contribution. Labels are placed directly on the figure; no legend box.
-
-**Output:** `animate_earth_corotation.gif` — primary presentation figure for corotation slide.
-
----
-
-## animate15_corotation — Corotation comparison (original version)
-
-Single top-down panel comparing two simulation runs: with and without the corotation E field. Shows both GC trails simultaneously; grey = magnetic drift only (Ω ≈ 0.008), orange = full drift with E field (Ω ≈ 0.027). Red rotating arm shows planet rotation at Ω = 0.02.
-
-**Output:** `animate15_corotation.gif`
-
----
-
-## animate16_rotating — Rotating tilted dipole animation
-
-3D animation of the test16 scenario over one complete planetary rotation. Eight field lines (two L-shells, four azimuths) rotate with the planet. The GC trail uses the plasma colourmap (dark purple = early, bright yellow = recent) so the direction of motion reads directly from the colour. The crimson magnetic axis arrow rotates at Ω; the grey rotation axis is fixed. A small horizontal colorbar (top right) labels the time axis. Tilt angle shown on the magnetic axis label.
-
-**Output:** `animate16_rotating.gif` — presentation figure for rotating tilted dipole slide.
+| Script | Description | Output |
+|--------|------------|--------|
+| animate02_helix | Helical orbit in 3D with rotating camera | `animate02_helix.gif` |
+| animate03_exb | Top-down E×B cycloid vs stationary circle | `animate03_exb.gif` |
+| animate04_gradb | Gradient-B drift with field line background | `animate04_gradb.gif` |
+| animate05_mirror | Mirror bounce in converging field | `animate05_mirror.gif` |
+| animate08_bounce | Full dipole orbit — gyration, bounce, drift | `animate08_bounce.gif` |
+| animate14a_aligned | Aligned dipole bounce (0°) | `animate14a_aligned.gif` |
+| animate14b_tilted | Tilted dipole bounce (59°, Uranus-like) | `animate14b_tilted.gif` |
+| animate14_combined | Side-by-side 0° vs 59° comparison | `animate14_combined.gif` |
+| animate15_corotation | Corotation: with vs without E field | `animate15_corotation.gif` |
+| animate_earth_corotation | Corotation: analytic reference vs full GC | `animate_earth_corotation.gif` |
+| animate_gc_gradient | Gradient drift with GC extraction | `animate_gc_gradient.gif` |
+| animate16_rotating | Rotating tilted dipole over one rotation period | `animate16_rotating.gif` |

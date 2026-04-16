@@ -1,12 +1,4 @@
-"""
-animate14_combined.py
-=====================
-Side-by-side comparison: aligned dipole (left) vs 59° tilted dipole (right).
-Both GC bounce orbits animated in a single figure so PowerPoint only needs
-to handle one GIF.
-
-Saves: ../Figures/animate14_combined.gif
-"""
+"""Side-by-side aligned vs tilted dipole GC bounce animation."""
 
 import os
 import numpy as np
@@ -19,7 +11,7 @@ from fields import E_zero, B_dipole_cartesian
 
 _DIR = os.path.dirname(os.path.abspath(__file__))
 
-# ---- Shared parameters ----
+# shared parameters
 q, m  = 1.0, 1.0
 M     = 500.0
 L0    = 3.0
@@ -30,9 +22,7 @@ tilt  = 59.0
 theta_rad    = np.radians(tilt)
 cos_t, sin_t = np.cos(theta_rad), np.sin(theta_rad)
 
-# =====================================================================
-# Simulation A — aligned dipole
-# =====================================================================
+# simulation A - aligned dipole
 r0_a     = np.array([L0, 0.0, 0.0])
 B_func_a = B_dipole_cartesian(M=M, tilt_deg=0.0)
 B0_a     = B_func_a(r0_a, 0.0)
@@ -56,9 +46,7 @@ t_a, traj_a = simulate_orbit_ivp(state0=state0_a, dt=dt_a, nsteps=nsteps_a,
 gc_a = extract_gc(traj_a, t_a, B_func_a, q=q, m=m)
 print("Done.")
 
-# =====================================================================
-# Simulation B — tilted dipole
-# =====================================================================
+# simulation B - tilted dipole
 r0_b     = np.array([L0 * cos_t, 0.0, -L0 * sin_t])
 B_func_b = B_dipole_cartesian(M=M, tilt_deg=tilt)
 B0_b     = B_func_b(r0_b, 0.0)
@@ -81,9 +69,7 @@ t_b, traj_b = simulate_orbit_ivp(state0=state0_b, dt=dt_b, nsteps=nsteps_b,
 gc_b = extract_gc(traj_b, t_b, B_func_b, q=q, m=m)
 print("Done.")
 
-# =====================================================================
-# Figure — two 3D subplots side by side
-# =====================================================================
+# figure - two 3D subplots side by side
 fig = plt.figure(figsize=(14, 7))
 
 ax_a = fig.add_subplot(121, projection="3d")
@@ -100,12 +86,12 @@ for ax in (ax_a, ax_b):
     ax.set_zlabel("z", fontsize=8)
     ax.tick_params(labelsize=6)
 
-# ---- Helper: draw dipole field lines ----
+# draw dipole field lines
 lam_fl = np.linspace(-1.25, 1.25, 300)
 L_fl   = [2.0, 2.5, 3.0, 3.5]
 phi_fl = np.linspace(0, 2 * np.pi, 8, endpoint=False)
 
-# Aligned field lines (left panel)
+# aligned field lines (left panel)
 for phi_f in phi_fl:
     for L_f in L_fl:
         r_fl = L_f * np.cos(lam_fl) ** 2
@@ -116,7 +102,7 @@ for phi_f in phi_fl:
         xf[below] = np.nan; yf[below] = np.nan; zf[below] = np.nan
         ax_a.plot(xf, yf, zf, color="#909090", lw=0.5, alpha=0.28)
 
-# Tilted field lines (right panel)
+# tilted field lines (right panel)
 for phi_f in phi_fl:
     for L_f in L_fl:
         r_fl = L_f * np.cos(lam_fl) ** 2
@@ -130,7 +116,7 @@ for phi_f in phi_fl:
         xg[below] = np.nan; yg[below] = np.nan; zg[below] = np.nan
         ax_b.plot(xg, yg, zg, color="#909090", lw=0.5, alpha=0.28)
 
-# ---- Geographic equatorial rings ----
+# geographic equatorial rings
 phi_r = np.linspace(0, 2 * np.pi, 200)
 R_eq  = 3.8
 for ax in (ax_a, ax_b):
@@ -140,7 +126,7 @@ for ax in (ax_a, ax_b):
             R_eq * np.sin(np.pi * 1.25) - 0.3, 0.15,
             "Geographic\nequatorial plane", fontsize=6, color="#888888")
 
-# ---- Magnetic equatorial plane ring (right panel only) ----
+# magnetic equatorial plane ring (right panel only)
 R_mag = 3.2
 phi_m = np.linspace(0, 2 * np.pi, 200)
 x_meq = -R_mag * np.sin(phi_m) * cos_t
@@ -153,7 +139,7 @@ ax_b.text(x_meq[lbl_idx] + 0.1, y_meq[lbl_idx] + 0.1, z_meq[lbl_idx] + 0.15,
           "Magnetic\nequatorial plane", fontsize=6,
           color="crimson", fontweight="bold")
 
-# ---- Planet spheres ----
+# planet spheres
 u_s = np.linspace(0, 2 * np.pi, 24)
 v_s = np.linspace(0, np.pi, 16)
 sphere_x = np.outer(np.cos(u_s), np.sin(v_s))
@@ -163,14 +149,14 @@ for ax in (ax_a, ax_b):
     ax.plot_surface(sphere_x, sphere_y, sphere_z,
                     color="lightsteelblue", alpha=0.55, zorder=0)
 
-# ---- Magnetic axis arrows ----
-# Aligned: vertical
+# magnetic axis arrows
+# aligned: vertical
 ax_a.quiver(0, 0, -2.2, 0, 0, 4.4,
             color="crimson", lw=3.0, arrow_length_ratio=0.12, zorder=5)
 ax_a.text(0.15, 0, 2.45, "Magnetic axis", fontsize=7,
           color="crimson", fontweight="bold")
 
-# Tilted: 59° from vertical
+# tilted: 59 deg from vertical
 ax_b.quiver(0, 0, 0,  2.2 * sin_t, 0,  2.2 * cos_t,
             color="crimson", lw=3.0, arrow_length_ratio=0.12, zorder=5)
 ax_b.quiver(0, 0, 0, -2.2 * sin_t, 0, -2.2 * cos_t,
@@ -179,15 +165,15 @@ ax_b.text(2.2 * sin_t + 0.15, 0.1, 2.2 * cos_t + 0.1,
           "Tilted magnetic\naxis (59°)", fontsize=7,
           color="crimson", fontweight="bold")
 
-# ---- Static full GC paths ----
+# static full GC paths
 ax_a.plot(gc_a[:, 0], gc_a[:, 1], gc_a[:, 2], lw=1.2, alpha=0.30, color="C0")
 ax_b.plot(gc_b[:, 0], gc_b[:, 1], gc_b[:, 2], lw=1.2, alpha=0.30, color="C2")
 
-# ---- Titles ----
+# titles
 ax_a.set_title("Aligned dipole", fontsize=12, pad=8, fontweight="bold")
 ax_b.set_title("Tilted dipole  (59°)", fontsize=12, pad=8, fontweight="bold")
 
-# ---- Animated artists ----
+# animated artists
 N_FRAMES = 200
 N_a = len(t_a);  skip_a = max(1, N_a // N_FRAMES)
 N_b = len(t_b);  skip_b = max(1, N_b // N_FRAMES)

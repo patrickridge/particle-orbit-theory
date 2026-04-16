@@ -1,22 +1,10 @@
 import numpy as np
 
-# =============================================================
-# fields.py
-# Canonical field definitions for particle orbit simulations.
-# ALL test scripts should import from here — never redefine
-# field functions inline in test files.
-#
-# Conventions
-# -----------
-# Every field function has signature  f(r, t) -> np.ndarray(3,)
-# Factory functions (B_uniform_z, B_gradx_z, …) return such a
-# function after capturing their parameters in a closure.
-# =============================================================
+# fields.py — E and B field definitions
+# All functions have signature f(r, t) -> np.ndarray(3,)
 
 
-# -------------------------------------------------------------
 # E fields
-# -------------------------------------------------------------
 
 def E_zero(r, t):
     """Zero electric field."""
@@ -35,17 +23,7 @@ def E_const(vec):
 
 
 def E_corotation(B_func, Omega):
-    """
-    Corotation electric field: E = -(Omega x r) x B
-
-    For a planet rotating at rate Omega about z, field lines are dragged
-    around at velocity v_rot = Omega x r = (-Omega*y, Omega*x, 0).
-    This induces E = -v_rot x B in the inertial frame.
-    The resulting E x B drift equals v_rot exactly — the guiding centre
-    co-rotates with the field line to lowest order.
-
-    Valid for an aligned static dipole (B does not change with time).
-    """
+    """Corotation E field: E = -(Omega x r) x B.  ExB drift = v_rot to lowest order."""
     def _E(r, t):
         B    = B_func(r, t)
         vrot = np.array([-Omega * r[1], Omega * r[0], 0.0])
@@ -53,15 +31,11 @@ def E_corotation(B_func, Omega):
     return _E
 
 
-# -------------------------------------------------------------
-# B fields — uniform / simple
-# -------------------------------------------------------------
+
+# B fields
 
 def B_uniform_z(B0=1.0):
-    """
-    Uniform field along z-hat: B = (0, 0, B0).
-    Usage: B_func = B_uniform_z(B0=1.0)
-    """
+    """Uniform field along z."""
     B0 = float(B0)
     def _B(r, t):
         return np.array([0.0, 0.0, B0])
@@ -69,19 +43,7 @@ def B_uniform_z(B0=1.0):
 
 
 def B_gradx_z(B0=1.0, eps=0.05):
-    """
-    Linearly-varying field: Bz(x) = B0 * (1 + eps * x), pointing z-hat.
-
-    NOTE: This field has ∇·B = 0 only approximately (it strictly satisfies
-    ∂Bz/∂z = 0 and ∂Bx/∂x = ∂By/∂y = 0, so ∇·B = 0 exactly for this
-    z-only form).  Keep |eps * x_max| << 1 so B does not approach zero.
-
-    Analytic grad-B drift (perpendicular to both B and ∇B):
-        v_gradB = (m v_perp^2) / (2 q B^2)  *  (B × ∇B) / B
-    For this field  ∇B = eps * B0 * x-hat,  B = Bz(x) z-hat, so
-        v_gradB ≈ (m v_perp^2 * eps) / (2 q B0)  in the  -y  direction
-                  (for positive charge, negative eps gradient sense).
-    """
+    """Bz = B0*(1 + eps*x).  Has div B = 0.  Keep |eps*x| << 1."""
     B0 = float(B0)
     eps = float(eps)
     def _B(r, t):
@@ -92,16 +54,7 @@ def B_gradx_z(B0=1.0, eps=0.05):
 
 
 def B_mirror_z(B0=1.0, alpha=0.1):
-    """
-    Toy mirror field: Bz(z) = B0 * (1 + alpha * z^2), pointing z-hat.
-
-    WARNING: ∇·B ≠ 0 for this field — it is a convenient toy model used
-    to demonstrate bounce motion but does NOT satisfy Maxwell's equations.
-    Use B_dipole_cartesian for a physically self-consistent mirror geometry.
-
-    Mirror (turning) point condition (adiabatic):
-        sin^2(alpha_eq) / sin^2(alpha_mirror) = B_eq / B_mirror
-    """
+    """Toy mirror: Bz = B0*(1 + alpha*z^2).  NB: div B != 0."""
     B0 = float(B0)
     alpha = float(alpha)
     def _B(r, t):
@@ -111,16 +64,7 @@ def B_mirror_z(B0=1.0, alpha=0.1):
     return _B
 
 def B_mirror_div_free(B0=1.0, alpha=0.5):
-    """
-    Simple divergence-free 'mirror-like' field (local model).
-
-    Bz(z) = B0 (1 + alpha z^2)
-    Bx    = -alpha B0 x z
-    By    = -alpha B0 y z
-
-    This satisfies div B = 0 and introduces transverse components so that
-    full-orbit Lorentz dynamics can produce mirror-like behaviour.
-    """
+    """Divergence-free mirror: Bz = B0(1+alpha*z^2), Bx = -alpha*B0*x*z, etc."""
     def _B(r, t):
         x, y, z = r
         Bz = B0 * (1.0 + alpha * z**2)
@@ -130,27 +74,8 @@ def B_mirror_div_free(B0=1.0, alpha=0.5):
     return _B
 
 
-# -------------------------------------------------------------
-# B fields — curvature (for test 09)
-# -------------------------------------------------------------
-
 def B_curved_z(B0=1.0, R_c=10.0):
-    """
-    Simple curved-field-line geometry: field lines curve in the x-z plane
-    with radius of curvature R_c.  In the local region near the origin:
-
-        Bx = -B0 * z / R_c
-        Bz =  B0 * (1 - x / R_c)          (to first order in 1/R_c)
-
-    This satisfies ∇·B = 0 to first order.
-
-    Analytic curvature drift:
-        v_curv = (m v_par^2) / (q B^2)  *  (R_c × B) / R_c^2
-    For this geometry (curvature in -x direction for field along +z):
-        v_curv ≈  (m v_par^2) / (q B0 R_c)  in the y direction.
-
-    Keep |x / R_c| << 1 and |z / R_c| << 1 for the approximation to hold.
-    """
+    """Curved field lines in x-z plane, radius of curvature R_c.  div B = 0 to first order."""
     B0 = float(B0)
     R_c = float(R_c)
     def _B(r, t):
@@ -161,32 +86,16 @@ def B_curved_z(B0=1.0, R_c=10.0):
     return _B
 
 
-# -------------------------------------------------------------
-# B fields — magnetic dipole (Cartesian, static)
-# -------------------------------------------------------------
+
+# Dipole fields
 
 def B_dipole_cartesian(M=1.0, tilt_deg=0.0, eps=1e-12):
-    """
-    Magnetic dipole field with dipole moment M tilted by tilt_deg from +z in the x-z plane.
-
-    General formula (moment m = M*(sin θ, 0, cos θ), θ = tilt_deg in radians):
-
-        B(r) = (1 / r^5) * [ 3(m·r) r  −  r² m ]
-
-    At tilt_deg=0 this reduces to the aligned case:
-        B(r) = (M / r^5) * [3zx,  3zy,  3z^2 - r^2]
-
-    This satisfies ∇·B = 0 and ∇×B = 0 everywhere except the origin.
-    The eps guard prevents division by zero near r = 0.
-
-    Planetary reference tilts (magnetic axis vs rotation axis):
-        Earth:   ~11°   Neptune: ~47°   Uranus: ~59°
-    """
+    """Magnetic dipole, moment M tilted by tilt_deg from +z in x-z plane."""
     M     = float(M)
     eps   = float(eps)
     theta = float(tilt_deg) * np.pi / 180.0
-    mx    = M * np.sin(theta)   # dipole moment x-component
-    mz    = M * np.cos(theta)   # dipole moment z-component
+    mx    = M * np.sin(theta)
+    mz    = M * np.cos(theta)
 
     def _B(r, t):
         x, y, z = float(r[0]), float(r[1]), float(r[2])
@@ -194,9 +103,9 @@ def B_dipole_cartesian(M=1.0, tilt_deg=0.0, eps=1e-12):
         r2 = max(r2, eps)
         r5 = r2 ** 2.5
 
-        m_dot_r = mx * x + mz * z   # m·r  (my=0, so no y term)
+        m_dot_r = mx * x + mz * z
         Bx = (3.0 * m_dot_r * x - r2 * mx) / r5
-        By = (3.0 * m_dot_r * y             ) / r5   # my = 0
+        By = (3.0 * m_dot_r * y             ) / r5
         Bz = (3.0 * m_dot_r * z - r2 * mz) / r5
         return np.array([Bx, By, Bz])
 
@@ -204,19 +113,7 @@ def B_dipole_cartesian(M=1.0, tilt_deg=0.0, eps=1e-12):
 
 
 def B_dipole_rotating(M=1.0, tilt_deg=0.0, Omega=0.0, eps=1e-12):
-    """
-    Rotating tilted dipole: magnetic moment rotates about z at angular rate Omega.
-        m(t) = M * (sin θ cos(Ωt),  sin θ sin(Ωt),  cos θ)
-
-    Special cases:
-      tilt_deg=0           → m along z, static  (same as B_dipole_cartesian, Omega irrelevant)
-      Omega=0              → static tilted dipole (same as B_dipole_cartesian(tilt_deg))
-      tilt_deg≠0, Omega≠0 → full time-varying rotating dipole
-
-    Usage:
-        B_func = B_dipole_rotating(M=500, tilt_deg=47, Omega=0.02)
-        E_func = E_corotation(B_func, Omega=0.02)   # E = -(Omega x r) x B(r,t)
-    """
+    """Rotating tilted dipole: m(t) = M*(sin θ cos Ωt, sin θ sin Ωt, cos θ)."""
     M   = float(M)
     eps = float(eps)
     theta = float(tilt_deg) * np.pi / 180.0
@@ -241,11 +138,7 @@ def B_dipole_rotating(M=1.0, tilt_deg=0.0, Omega=0.0, eps=1e-12):
 
 
 def dipole_B_magnitude_on_axis(M=1.0):
-    """
-    Analytic |B| on the dipole axis (x = y = 0):
-        |B(z)| = 2M / |z|^3
-    Accepts scalar or numpy array z.
-    """
+    """|B| on the dipole axis: 2M/|z|^3."""
     M = float(M)
     def _Bmag(z):
         z = np.asarray(z, dtype=float)

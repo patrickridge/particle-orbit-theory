@@ -1,12 +1,5 @@
 import os
-"""
-animate02_helix.py
-==================
-Animated helix orbit in a uniform magnetic field.
-Shows: gyration around field lines, parallel drift along B, resulting helix.
-Camera slowly rotates for 3D effect.
-Saves: ../Figures/animate02_helix.gif
-"""
+"""Animate a helical orbit in a uniform B field."""
 
 import numpy as np
 import matplotlib.pyplot as plt
@@ -16,11 +9,11 @@ from mpl_toolkits.mplot3d import Axes3D  # noqa: F401
 from orbit_ivp_core import simulate_orbit_ivp
 from fields import E_zero, B_uniform_z
 
-# Figures directory — resolved relative to this script.
+# output directory
 _FIG = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "Figures")
 os.makedirs(_FIG, exist_ok=True)
 
-# ---- Parameters ----
+# parameters
 q, m = 1.0, 1.0
 B0   = 1.0
 B_func = B_uniform_z(B0)
@@ -51,12 +44,12 @@ t, traj = simulate_orbit_ivp(state0=state0, dt=dt, nsteps=nsteps,
 r = traj[:, :3]
 print(f"Done. {len(t)} points over {T_run:.1f} time units ({T_run/T_gyro:.0f} gyrations).")
 
-# ---- Figure ----
+# figure setup
 fig = plt.figure(figsize=(7, 7))
 ax  = fig.add_subplot(111, projection="3d")
 ax.set_facecolor("white")
 
-# Static field lines — GC is on z-axis so show lines close to it
+# static field lines near the GC
 z_fl = np.linspace(0, T_run * v_par * 1.05, 20)
 for xf, yf in [(0, 0), (-1.3, 0), (1.3, 0), (0, -1.3), (0, 1.3),
                (-1.3, -1.3), (-1.3, 1.3), (1.3, -1.3), (1.3, 1.3)]:
@@ -67,7 +60,7 @@ for xf, yf in [(0, 0), (-1.3, 0), (1.3, 0), (0, -1.3), (0, 1.3),
     ax.quiver(xf, yf, z_fl[-1], 0, 0, 0.3,
               color="steelblue", lw=lw, alpha=alp, arrow_length_ratio=0.8)
 
-# Full orbit (faint static reference)
+# faint full orbit for reference
 ax.plot(r[:, 0], r[:, 1], r[:, 2], lw=0.5, alpha=0.12, color="gray")
 
 # Animated artists
@@ -85,7 +78,7 @@ ax.set_xlabel("x"); ax.set_ylabel("y"); ax.set_zlabel("z")
 ax.set_title("Uniform B field  (B = Bẑ)\nGyration + parallel drift → helix", fontsize=13)
 ax.legend(fontsize=11, loc="upper right")
 
-# GC path (on-axis, z only — since no drift in x/y in uniform B+no E)
+# GC path along z-axis
 z_gc = v_par * t
 
 N_FRAMES  = 180
@@ -102,7 +95,7 @@ def update(frame):
     dot.set_data([r[i, 0]], [r[i, 1]])
     dot.set_3d_properties([r[i, 2]])
 
-    # GC moves along z-axis at v_par — no gyration, just straight drift
+    # GC moves along z-axis at v_par
     gc_trail.set_data([0] * (i - i0), [0] * (i - i0))
     gc_trail.set_3d_properties(v_par * t[i0:i])
     gc_dot.set_data([0], [0])

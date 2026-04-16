@@ -58,27 +58,7 @@ def simulate_orbit_ivp(
 
 
 def extract_gc(traj, t, B_func, q=1.0, m=1.0):
-    """
-    Extract true guiding-centre positions from a full Lorentz orbit by
-    subtracting the Larmor radius vector analytically at every timestep:
-
-        R_gc = r + (m / q·B²) · (v × B)
-
-    This removes the gyration exactly regardless of phase, eliminating
-    the decimation artefact (wiggles) seen when sampling every N-th point.
-    Decimate the returned array afterwards for 3D plots if needed.
-
-    Parameters
-    ----------
-    traj : (N, 6) array — output of simulate_orbit_ivp
-    t    : (N,) time array
-    B_func : callable B(r, t)
-    q, m : charge and mass (default 1.0)
-
-    Returns
-    -------
-    r_gc : (N, 3) array of guiding-centre positions
-    """
+    """Extract GC positions: R_gc = r + (m/qB^2)(v x B)."""
     r_gc = np.empty((len(t), 3))
     for i in range(len(t)):
         r  = traj[i, :3]

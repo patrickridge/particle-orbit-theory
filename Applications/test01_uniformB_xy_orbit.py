@@ -8,18 +8,12 @@ sns.set_theme(style="ticks", context="paper")
 from orbit_ivp_core import simulate_orbit_ivp, q, m
 from fields import E_zero, B_uniform_z
 
-# Figures directory — resolved relative to this script, so the script runs correctly from any working directory.
+# output directory
 _FIG = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "Figures")
 os.makedirs(_FIG, exist_ok=True)
 
-# =============================================================
-# Test 1: Circular gyromotion in a uniform magnetic field
-#
-# A charged particle with velocity perpendicular to B gyrates in a circle.
-# Compares the numerical orbit to the analytic gyroradius and period.
-#   Omega = q B0 / m,   r_L = v_perp / Omega,   T = 2 pi / Omega
-# Expected: circular orbit in x-y plane; numerical radius matches r_L.
-# =============================================================
+# Test 1: gyromotion in uniform B
+# check numerical radius = r_L, period = 2pi/Omega
 
 B0    = 1.0
 B_func = B_uniform_z(B0)
@@ -30,7 +24,7 @@ T      = 20.0
 nsteps = int(T / dt)
 
 r0     = np.array([0.0, 0.0, 0.0])
-v0     = np.array([1.0, 0.0, 0.0])   # purely perpendicular to B
+v0     = np.array([1.0, 0.0, 0.0])   # perp to B
 state0 = np.concatenate((r0, v0))
 
 t, traj = simulate_orbit_ivp(
@@ -40,7 +34,7 @@ t, traj = simulate_orbit_ivp(
 
 x, y = traj[:, 0], traj[:, 1]
 
-# ---- Analytic predictions -------------------------------------------
+# analytic predictions
 v_perp  = np.linalg.norm(v0)
 Omega   = q * B0 / m
 r_L     = m * v_perp / (q * B0)      # Larmor radius
@@ -49,22 +43,19 @@ T_gyro  = 2.0 * np.pi / Omega
 print(f"Larmor radius  (theory): {r_L:.6f}")
 print(f"Gyroperiod     (theory): {T_gyro:.6f}")
 
-# Numerical radius: mean distance from guiding centre
-# Guiding centre sits at (0, -r_L) for v0 = (v,0,0), B along +z, q>0
+# numerical radius from GC at (0, -r_L)
 gc_x = 0.0
 gc_y = -r_L
 r_numerical = np.sqrt((x - gc_x)**2 + (y - gc_y)**2)
 print(f"Mean numerical radius:   {np.mean(r_numerical):.6f}")
 print(f"Max radius error:        {np.max(np.abs(r_numerical - r_L)):.2e}")
 
-# Analytic circle for overlay
+# analytic circle
 theta     = np.linspace(0, 2 * np.pi, 500)
 x_circle  = gc_x + r_L * np.cos(theta)
 y_circle  = gc_y + r_L * np.sin(theta)
 
-# ======================================================================
-# Plot: numerical orbit + analytic circle overlay
-# ======================================================================
+# plot
 fig, ax = plt.subplots(figsize=(5.5, 5.5))
 
 ax.plot(x, y, lw=1.5, label="Numerical orbit")
