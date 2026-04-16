@@ -33,3 +33,6 @@ Resources/
 .env
 venv/
 .venv/
+
+# Editor/tool config
+.claude/
