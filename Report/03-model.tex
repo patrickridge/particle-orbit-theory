@@ -1,16 +1,12 @@
 \chapter{Mathematical Model and Numerical Methods}
 \label{ch:model}
 
-This chapter describes how the equations of motion are formulated for
-numerical integration, the choice of integrator and tolerances, and the
-diagnostic quantities used to assess accuracy.
+This chapter describes how the equations of motion are formulated for numerical integration. The choice of integrator, tolerances and the diagnostic quantities used to assess accuracy.
 
 \section{Model Equations}
 \label{sec:model_eqs}
 
-The Lorentz force equation~\eqref{eq:lorentz} is second order in time.
-For numerical integration it is rewritten as a first-order system by
-defining the six-dimensional state vector
+The Lorentz force equation~\eqref{eq:lorentz} is second order in time. For numerical integration it is rewritten as a first-order system by defining the six-dimensional state vector
 \begin{equation}
   \mathbf{x}(t) = \begin{pmatrix} \mathbf{r}(t) \\ \mathbf{v}(t)
     \end{pmatrix} \in \mathbb{R}^6,
@@ -23,51 +19,39 @@ giving
     \left(\mathbf{E}(\mathbf{r},t) + \mathbf{v} \times
     \mathbf{B}(\mathbf{r},t)\right). \label{eq:dvdt}
 \end{align}
-Where needed, the velocity is decomposed into components parallel and
-perpendicular to the local field direction
+Where needed, the velocity is decomposed into components parallel and perpendicular to the local field direction
 $\hat{\mathbf{b}} = \mathbf{B}/|\mathbf{B}|$,
 \begin{equation}
   v_\parallel = \mathbf{v} \cdot \hat{\mathbf{b}}, \qquad
   \mathbf{v}_\perp = \mathbf{v} - v_\parallel \hat{\mathbf{b}},
   \label{eq:vpar_vperp}
 \end{equation}
-which is used to compute $\mu$, locate mirror points, and extract the
-guiding centre.
+which is used to compute $\mu$, locate mirror points and extract the guiding centre.
 
 \section{Dimensionless Units}
 \label{sec:units}
 
-All simulations except the physical case in Section~\ref{sec:si_units}
-use dimensionless units with
+All simulations except the physical case in Section~\ref{sec:si_units} use dimensionless units with
 \begin{equation}
   q = 1, \quad m = 1, \quad B_0 = 1, \quad v_0 = 1.
   \label{eq:dimless}
 \end{equation}
-The gyrofrequency is then $\Omega = 1$ and the gyroperiod
-$T_\Omega = 2\pi$. Physical results are recovered by restoring
+The gyrofrequency is then $\Omega = 1$ and the gyroperiod $T_\Omega = 2\pi$. Physical results are recovered by restoring
 dimensional factors as done in Section~\ref{sec:si_units}.
 
 \section{Time Integration Scheme}
 \label{sec:integrator}
 
-The six-dimensional ODE system~\eqref{eq:drdt}--\eqref{eq:dvdt} is
-integrated using the explicit Runge--Kutta method of order 4(5), accessed
-via \texttt{scipy.integrate.solve\_ivp} with \texttt{method="RK45"}. At
-each step a fifth-order solution estimates the local truncation error and
-the step size is adjusted automatically to stay within the specified
-tolerances:
+The six-dimensional ODE system~\eqref{eq:drdt}--\eqref{eq:dvdt} is integrated using the explicit Runge--Kutta method of order 4(5), accessed via \texttt{scipy.integrate.solve\_ivp} with \texttt{method="RK45"}. At each step a fifth-order solution estimates the local truncation error and the step size is adjusted automatically to stay within the specified tolerances:
 \begin{equation}
   \texttt{rtol} = 10^{-9}, \qquad \texttt{atol} = 10^{-12}.
   \label{eq:tolerances_num}
 \end{equation}
 RK45 introduces no leading-order dissipation, so energy is not
-artificially removed over many gyroperiods. One limitation is that phase
-errors can accumulate over very long integrations, though energy
-conservation remains excellent over the timescales used here.
+artificially removed over many gyroperiods. One limitation is that phase errors can accumulate over very long integrations, though energy conservation remains excellent over the timescales used here.
 
 Output is returned at a uniform grid with spacing
-$\Delta t \le T_\Omega / 100$, ensuring the gyromotion is well resolved
-in the output trajectory.
+$\Delta t \le T_\Omega / 100$, ensuring the gyromotion is well resolved in the output trajectory.
 
 \section{Diagnostic Quantities}
 \label{sec:diagnostics}
@@ -84,45 +68,33 @@ drift
 is tracked throughout and should remain below $10^{-6}$.
 
 \paragraph{Parallel velocity.} Zero-crossings of
-$v_\parallel = \mathbf{v} \cdot \hat{\mathbf{b}}$ identify mirror
-points, and intervals between successive crossings give numerical bounce
-period estimates.
+$v_\parallel = \mathbf{v} \cdot \hat{\mathbf{b}}$ identify mirror points and intervals between successive crossings give numerical bounce period estimates.
 
 \paragraph{Magnetic moment.} The relative variation
 \begin{equation}
   \delta\mu(t) = \frac{\mu(t) - \mu(0)}{\mu(0)}
   \label{eq:mu_diag}
 \end{equation}
-tests how well the adiabatic invariant is preserved during the
-simulation.
+tests how well the first adiabatic invariant is preserved during the simulation.
 
 \section{Guiding-Centre Extraction}
 \label{sec:gc_extract}
 
-In full Lorentz orbit simulations, the guiding-centre position is
-extracted at every output step using
+In full Lorentz orbit simulations, the guiding-centre position is extracted at every output step using
 \begin{equation}
   \mathbf{R}_\mathrm{GC} = \mathbf{r} + \frac{m}{qB^2}
     \left(\mathbf{v} \times \mathbf{B}\right),
   \label{eq:gc_extract}
 \end{equation}
-which removes the instantaneous Larmor radius regardless of gyration
-phase, giving a smooth trajectory for comparison with the guiding-centre
-equations of Section~\ref{sec:gc_theory}. All dipole simulations from
-Test~8 onwards use this extraction.
+which removes the instantaneous Larmor radius regardless of gyration phase, giving a smooth trajectory for comparison with the guiding-centre equations of Section~\ref{sec:gc_theory}. All dipole simulations from Test~8 onwards use this extraction.
 
 \section{Gyro-Averaging}
 \label{sec:gyroavg}
 
-For uniform and gradient-field tests (Tests~1--4), a rolling mean over
-one gyroperiod isolates the slow drift from the fast gyromotion. Drift
-velocities are then extracted by fitting a straight line to the averaged
-position.
+For uniform and gradient-field tests (Tests~1--4), a rolling mean over one gyroperiod isolates the slow drift from the fast gyromotion. Drift velocities are then extracted by fitting a straight line to the averaged position.
 
 \section{Implementation}
 \label{sec:implementation}
 
 The solver, field definitions and guiding-centre integrator are
-implemented as three separate Python modules. Each test script sets
-initial conditions, runs the appropriate integrator and saves figures.
-Selected listings are provided in Appendix~\ref{sec:code_listings}.
+implemented as three separate Python modules. Each test script sets initial conditions, runs the appropriate integrator and saves figures. Selected listings are provided in Appendix~\ref{sec:code_listings}.

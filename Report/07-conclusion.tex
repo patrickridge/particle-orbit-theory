@@ -1,91 +1,33 @@
 \chapter{Conclusion}
 \label{ch:conclusion}
 
-This project built and validated a numerical framework for computing
-charged particle orbits in prescribed electromagnetic fields, then
-applied it to study particle dynamics in the magnetic dipole field
-across a range of conditions.
+This project built and validated a numerical framework for computing charged particle orbits in prescribed electromagnetic fields, then applied it to study particle dynamics in the magnetic dipole field.
 
-The solver, based on the adaptive RK45 scheme, was verified through a
-hierarchy of test cases spanning circular gyromotion, helical motion,
-$\mathbf{E} \times \mathbf{B}$ drift, gradient-$B$ drift, and the
-dipole field itself. Numerically computed trajectories and drift
-velocities were compared quantitatively against analytic predictions in
-each case, with kinetic energy conservation monitored throughout as an
-independent check. Relative energy errors stayed below $10^{-6}$ in
-every test, confirming that the chosen tolerances are appropriate.
+The solver was verified against analytic solutions for gyromotion, helical motion, $\mathbf{E} \times \mathbf{B}$ drift, and gradient-$B$ drift, with energy conservation below $10^{-6}$ in every test. Applied to the dipole field, it demonstrated bounce motion, confirmed
+approximate conservation of $\mu$ and showed that the guiding-centre integrator reproduces the slow bounce dynamics faithfully in the adiabatic regime. A simulation in physical SI units at $L = 3$ matchedthe analytic mirror latitude to within 0.02\,\%.
 
-The validated solver was applied to full orbit integration in the dipole
-field, demonstrating bounce motion between mirror points and approximate
-conservation of the magnetic moment $\mu$. Numerically measured bounce
-periods agreed with analytic values from the standard bounce-period
-integral to within 1\,\%, consistent with the accuracy of the underlying
-adiabatic approximation. A guiding-centre integrator was run alongside
-the full Lorentz solver and shown to reproduce the slow bounce dynamics
-faithfully across approximately 400 gyrations when the adiabatic
-conditions are well satisfied, with the growing positional offset
-attributable to secular phase drift in the non-symplectic RK45
-integrator rather than breakdown of the approximation.
+The framework was extended to tilted dipole fields at $47^\circ$ and $59^\circ$, reproducing field geometries representing Neptune and Uranus and showing that the apparent asymmetry in geographic coordinates is a projection effect. Adding a corotation electric field recovered the input rotation rate to within 96.6\,\%, and a rotating tilted dipole simulation combined all three adiabatic motions with time-dependent fields in a single integration.
 
-The framework was also applied in physical SI units, simulating a
-10\,keV electron at $L = 3$ in Earth's dipole field. The numerically
-computed mirror latitude agreed with the analytic prediction to within
-0.02\,\%, and the gyroperiod (32\,$\mu$s), gyroradius (0.2\,km), and
-bounce period (1.8\,s) all matched the expected values for this energy
-and $L$-shell. An extension to tilted dipole fields showed that
-displacing the magnetic equator from the geographic equatorial plane
-produces asymmetric bounce motion in geographic coordinates, with the
-degree of asymmetry increasing with tilt angle. Simulations at
-$47^\circ$ and $59^\circ$ tilt reproduced the field geometries of
-Neptune and Uranus respectively, confirming that the mirror mechanism
-operates correctly regardless of the orientation of the dipole axis.
-
-Adding a corotation electric field demonstrated the
-$\mathbf{E} \times \mathbf{B}$ drift in the dipole geometry, recovering
-the input rotation rate to within 96.6\,\%. The most complete
-simulation combined a rotating tilted dipole with corotation, producing
-time-dependent fields and reproducing all three adiabatic motions
-(gyration, bounce, drift) simultaneously. The modulation of the bounce
-amplitude by the rotating field geometry provides direct evidence that
-the solver correctly couples the particle dynamics to the time-dependent
-field.
-
-The modular design of the implementation means that adding a new field
-configuration requires only a new factory function in
-\texttt{fields.py}, with no changes to the solver.
+The modular design means that adding a new field configuration requires only a new function in \texttt{fields.py}, with no changes to the solver.
 
 \section*{Future Work}
-
-Several natural extensions would build on the framework developed here.
-
+Several extensions would build on this framework.
 \begin{itemize}
-  \item \textbf{Symplectic integrator.} Replacing the RK45 scheme with a
-    symplectic particle pusher such as the Boris algorithm would suppress
-    the secular phase drift observed in long integrations, enabling
-    accurate tracking over thousands of bounce periods without energy or
-    $\mu$ drift.
-
-  \item \textbf{Relativistic velocities.} The current solver assumes
-    $|\mathbf{v}| \ll c$. Extending the equations of motion to include
-    the relativistic Lorentz factor $\gamma = (1 - v^2/c^2)^{-1/2}$
-    would allow the framework to model higher-energy particles in
-    radiation belts, where relativistic corrections become significant
-    above approximately 100\,keV for electrons.
-
-  \item \textbf{Non-dipolar field models.} Real planetary magnetospheres
-    include higher-order multipole components, magnetopause currents, and
-    a magnetotail. Incorporating empirical field models such as the
-    Tsyganenko models for Earth would test the solver in more realistic
-    geometries where analytic orbit theory no longer applies.
-
-  \item \textbf{Time-dependent perturbations.} Adding oscillatory
-    electric or magnetic field perturbations would enable the study of
-    wave--particle interactions, a key mechanism for particle
-    energisation and pitch-angle scattering in radiation belts.
-
-  \item \textbf{Drift-shell splitting.} In a non-axisymmetric field,
-    particles on the same $L$-shell but with different pitch angles
-    drift onto different shells. This effect is absent in a pure dipole
-    but would emerge naturally in a tilted or offset dipole with
-    higher-order terms.
+  \item \textbf{Relativistic velocities.} Extending the equations of
+    motion to include the relativistic Lorentz factor would allow
+    modelling of higher-energy radiation belt particles, where
+    relativistic corrections become significant above approximately
+    100\,keV for electrons.
+  \item \textbf{Higher-order drifts.} The guiding-centre expansion can
+    be carried to higher order to include effects such as polarisation
+    drift, which becomes relevant for time-varying electric fields and
+    for particles with larger gyroradii.
+  \item \textbf{Higher adiabatic invariants.} This project focused on
+    the first adiabatic invariant $\mu$. Tracking the second invariant
+    $J = \oint v_\parallel \, \mathrm{d}s$ and the third invariant
+    $\Phi$ (the drift-shell flux) would allow a more complete test of
+    adiabatic theory and connect directly to radiation belt dynamics.
+  \item \textbf{Symplectic integrator.} Replacing RK45 with a symplectic
+    scheme such as the Boris algorithm would suppress gradual phase
+    drift, enabling accurate tracking over thousands of bounce periods.
 \end{itemize}
