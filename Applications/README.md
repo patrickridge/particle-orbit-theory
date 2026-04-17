@@ -112,9 +112,9 @@ Draws the magnetic field lines for several L-shells in the meridional (x-z) plan
 
 ## test13 — 10 keV electron in Earth's dipole (SI units)
 
-The physical application. Simulates a 10 keV electron starting at L = 3 in Earth's dipole field using real SI units (metres, Tesla, kg). Computes the gyroperiod (~0.03 s), gyroradius (~200 km), and bounce period (~1.8 s). The z(t) plot shows the full orbit (faint) and the guiding centre extracted via `extract_gc` (solid), with mirror points marked on the GC track. Mirror latitudes are compared to the analytic formula.
+The physical application. Simulates a 10 keV electron starting at L = 3 in Earth's dipole field using real SI units (metres, Tesla, kg). Computes the gyroperiod (~32 µs), gyroradius (~0.2 km), and bounce period (~1.8 s). The z(t) plot shows the full orbit (faint) and the guiding centre extracted via `extract_gc` (solid), with mirror points marked on the GC track. Mirror latitudes are compared to the analytic formula.
 
-**Key result:** Numerical mirror points match the analytic mirror latitude; `μ` conserved to < 1% over 4 bounce periods (~7 s of real time).
+**Key result:** Numerical mirror latitude agrees with analytic prediction to 0.02%; `μ` conserved to ~2 × 10⁻⁴ over 2 bounce periods (~115,000 gyrations).
 
 ---
 

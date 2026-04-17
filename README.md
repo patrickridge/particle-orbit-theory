@@ -1,6 +1,5 @@
-# Particle Orbit Theory
-
-The motion of charged particles in electromagnetic fields. BSc Honours project (MT4599), University of St Andrews.
+# The Motion of Charged Particles in Electromagnetic Fields 
+## BSc Honours project (MT4599), University of St Andrews
 
 The Lorentz force equation is integrated with `scipy.integrate.solve_ivp` (RK45) and the numerical output is compared against analytic predictions from particle orbit theory. The same solver is applied across a progression of field configurations, from uniform fields up to a rotating tilted dipole representing a planetary magnetosphere.
 

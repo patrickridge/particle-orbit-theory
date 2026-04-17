@@ -1,7 +1,7 @@
 # Validation Summary
 
 Key quantitative results from the simulation test suite.
-Last updated: 2 April 2026.
+Last updated: April 2026.
 
 Parameters unless stated: q = m = B₀ = 1 (code units), M = 500, L = 3, pitch = 45°.
 
@@ -66,10 +66,10 @@ Runtime: ~20 minutes (2 bounce periods).
 | Analytic \|z_mirror\| | 0.9967 Rₑ | |
 | Numerical \|z_mirror\| (1st crossing) | 0.9968 Rₑ | From v_∥ = 0 detection |
 | Mirror z error | **< 0.02%** | Primary adiabatic validation check |
-| Max \|ΔKE/KE₀\| over 2 bounces | 1.52 × 10⁻² | Phase error over ~115k gyrations |
-| Max \|Δμ/μ₀\| over 2 bounces | 2.02 × 10⁻² (2%) | Expected — see note |
+| Max \|ΔKE/KE₀\| over 2 bounces | 4.4 × 10⁻⁵ | Over ~115k gyrations |
+| Max \|Δμ/μ₀\| over 2 bounces | 2.0 × 10⁻⁴ | Slow secular growth |
 
-The ~2% μ error is accumulated phase error over ~115,000 gyrations. Mirror point accuracy (< 0.02%) is the physically meaningful check.
+The energy and μ errors are small secular drifts over ~115,000 gyrations, characteristic of a non-symplectic integrator. Mirror-point accuracy (< 0.02%) is the physically meaningful check for trapped-particle motion.
 
 ---
 
