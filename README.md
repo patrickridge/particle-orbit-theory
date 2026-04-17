@@ -1,6 +1,6 @@
 # Particle Orbit Theory
 
-BSc Honours project — numerical simulation of charged particle orbits in electromagnetic fields.
+BSc Honours project — The motion of charged particle orbits in electromagnetic fields.
 
 The Lorentz force equation is integrated numerically using `scipy.integrate.solve_ivp` (RK45) and the results are compared against analytic predictions from guiding-centre theory. The project covers everything from basic gyromotion in a uniform field up to a rotating tilted dipole representing a planetary magnetosphere.
 

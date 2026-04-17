@@ -137,8 +137,8 @@ state0 = np.concatenate([r0, v0])
 t, traj = simulate_orbit_ivp(
     state0=state0, dt=dt, nsteps=nsteps,
     q=q, m=m_e, E_func=E_func, B_func=B_func,
-    rtol=1e-10, atol=1.0,
-    # atol=1.0 keeps step size small enough for conservation
+    rtol=1e-10, atol=1e-3,
+    # tolerance relaxed from project default (1e-12) to keep SI run tractable
 )
 r_traj = traj[:, :3]
 v_traj = traj[:, 3:]
