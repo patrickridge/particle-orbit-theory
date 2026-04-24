@@ -42,7 +42,7 @@ state0 = np.concatenate((r0, v0))
 v_par_mag = v_mag * np.cos(pitch)
 T_b_est   = 4.0 * r0[0] / v_par_mag   # rough T_b
 T         = 4.0 * T_b_est
-dt        = 0.001
+dt        = 0.0001
 nsteps    = int(T / dt)
 
 Omega   = abs(q) * np.linalg.norm(B0_vec) / m

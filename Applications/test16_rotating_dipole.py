@@ -44,38 +44,56 @@ T_gyro     = 2.0 * np.pi / Omega_gyro
 v_par_mag  = abs(np.dot(v0, bhat))
 T_b_est    = 4.0 * L0 / v_par_mag
 T_cor      = 2.0 * np.pi / Omega
-T_run      = 0.75 * T_cor    # 3/4 rotation — less dense than full revolution
 dt         = min(T_b_est / 500.0, 0.05 * T_gyro)
-nsteps     = int(T_run / dt) + 1
 skip       = max(1, int(round(T_gyro / dt)))
+
+# Two integrations of different lengths:
+#   - "long"  (2 T_cor): used for z(t) and phi(t), where the full modulation
+#     cycle and the linear phi-drift fit need to be resolved.
+#   - "short" (1 T_cor): used for the 3D orbit, where a longer integration
+#     makes the drift shell visually cluttered without adding information.
+T_long  = 2.0 * T_cor
+T_short = 1.0 * T_cor
+n_long  = int(T_long  / dt) + 1
+n_short = int(T_short / dt) + 1
 
 print(f"Tilt = {tilt_deg:.0f}°,  Omega = {Omega}")
 print(f"T_corotation = {T_cor:.1f},  T_bounce_est = {T_b_est:.2f}")
-print(f"T_b / T_gyro = {T_b_est/T_gyro:.1f},  nsteps = {nsteps}")
-print("Integrating ...")
+print(f"T_b / T_gyro = {T_b_est/T_gyro:.1f}")
+print(f"Long run: nsteps = {n_long} ({T_long/T_cor:.1f} T_cor, for z(t) and phi(t))")
+print(f"Short run: nsteps = {n_short} ({T_short/T_cor:.1f} T_cor, for 3D)")
+print("Integrating long run ...")
 
-t, traj = simulate_orbit_ivp(
-    state0=state0, dt=dt, nsteps=nsteps,
+t_l, traj_l = simulate_orbit_ivp(
+    state0=state0, dt=dt, nsteps=n_long,
     q=q, m=m, E_func=E_func, B_func=B_func,
     rtol=1e-9, atol=1e-9,
 )
 print("done.")
+gc_l = extract_gc(traj_l, t_l, B_func, q=q, m=m)
+t_gc = t_l[::skip]
+x_gc_l = gc_l[::skip, 0]; y_gc_l = gc_l[::skip, 1]; z_gc_l = gc_l[::skip, 2]
 
-# GC extraction and decimation
-gc   = extract_gc(traj, t, B_func, q=q, m=m)
-x_gc = gc[::skip, 0];  y_gc = gc[::skip, 1];  z_gc = gc[::skip, 2];  t_gc = t[::skip]
-r_gc = np.sqrt(x_gc**2 + y_gc**2)
-
-# azimuthal drift rate (tilted dipole gives Omega_d < Omega)
-phi_gc    = np.unwrap(np.arctan2(y_gc, x_gc))
+# azimuthal drift rate (long run gives cleaner fit)
+phi_gc    = np.unwrap(np.arctan2(y_gc_l, x_gc_l))
 n         = len(phi_gc)
 i0, i1    = n // 10, 9 * n // 10
 Omega_meas = np.polyfit(t_gc[i0:i1], phi_gc[i0:i1], 1)[0]
 print(f"Nominal rotation rate  Omega   = {Omega:.5f} rad/unit-time")
 print(f"Measured drift rate    Omega_d = {Omega_meas:.5f} rad/unit-time")
-print(f"(For a tilted dipole E×B drift < Omega because v_rot · B != 0)")
 
-norm      = Normalize(vmin=t_gc.min(), vmax=t_gc.max())
+print("Integrating short run (for 3D plot) ...")
+t_s, traj_s = simulate_orbit_ivp(
+    state0=state0, dt=dt, nsteps=n_short,
+    q=q, m=m, E_func=E_func, B_func=B_func,
+    rtol=1e-9, atol=1e-9,
+)
+print("done.")
+gc_s = extract_gc(traj_s, t_s, B_func, q=q, m=m)
+x_gc = gc_s[::skip, 0]; y_gc = gc_s[::skip, 1]; z_gc = gc_s[::skip, 2]
+t_gc_short = t_s[::skip]
+
+norm      = Normalize(vmin=t_gc_short.min(), vmax=t_gc_short.max())
 cmap_used = cm.plasma
 
 # Plot 1: 3D GC orbit
@@ -103,9 +121,9 @@ for phi_f in phi_fl:
         xg[below] = np.nan; yg[below] = np.nan; zg[below] = np.nan
         ax1.plot(xg, yg, zg, color="steelblue", lw=0.4, alpha=0.18)
 
-# GC path coloured by time
+# GC path (short run) coloured by time
 for i in range(len(x_gc) - 1):
-    c = cmap_used(norm(0.5 * (t_gc[i] + t_gc[i + 1])))
+    c = cmap_used(norm(0.5 * (t_gc_short[i] + t_gc_short[i + 1])))
     ax1.plot(x_gc[i:i+2], y_gc[i:i+2], z_gc[i:i+2],
              color=c, lw=1.4, alpha=0.9)
 
@@ -154,9 +172,9 @@ plt.savefig(os.path.join(_FIG, "test16_rotating_dipole_3D.png"), dpi=300)
 plt.close()
 print("Saved test16_rotating_dipole_3D.png")
 
-# Plot 2: z(t) bounce
+# Plot 2: z(t) bounce (long run, to reveal full modulation)
 fig2, ax2 = plt.subplots(figsize=(9, 3.5))
-ax2.plot(t_gc, z_gc, lw=0.9, color="C0")
+ax2.plot(t_gc, z_gc_l, lw=0.9, color="C0")
 ax2.axhline(0, color="gray", lw=0.6, ls="--")
 ax2.set_xlabel("t (code units)")
 ax2.set_ylabel("z (code units)")
@@ -171,7 +189,7 @@ plt.savefig(os.path.join(_FIG, "test16_rotating_dipole_z_vs_t.png"), dpi=300)
 plt.close()
 print("Saved test16_rotating_dipole_z_vs_t.png")
 
-# Plot 3: phi(t) co-rotation check
+# Plot 3: phi(t) co-rotation check (long run)
 phi_theory = Omega * t_gc
 
 fig3, (ax_top, ax_bot) = plt.subplots(

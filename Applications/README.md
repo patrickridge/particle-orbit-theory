@@ -7,6 +7,14 @@ cd Applications
 python test01_uniformB_xy_orbit.py
 ```
 
+Core modules (imported by the scripts below):
+
+- `orbit_ivp_core.py` — full Lorentz solver and guiding-centre extraction formula
+- `fields.py` — field library (uniform, gradient, aligned/tilted/rotating dipole, corotation E)
+- `guiding_centre.py` — direct integrator for the guiding-centre equations of motion
+
+The `testNN_*.py` scripts produce the verification and results figures in roughly the order they appear in the dissertation. The `figureN_M_*.py` scripts produce pedagogical figures used for exposition (not tied to a single test).
+
 ---
 
 ## test01 — Circular gyromotion
@@ -143,6 +151,22 @@ The full simulation combining test14 and test15: a Neptune-like tilted dipole (4
 Start on the magnetic equatorial plane (r₀ = L·(cosθ, 0, −sinθ)), same as test14. GC extracted via `extract_gc`. All three motions — gyration, bounce, co-rotation — present simultaneously. 3D plot includes tilted field lines at t=0.
 
 **Key result:** GC co-rotates at a rate slightly above Ω (gradient+curvature drift adds to E×B); z(t) shows bounce amplitude modulated by the rotating asymmetric field; 3D orbit shows the tilted drift shell sweeping around the rotation axis over one corotation period.
+
+---
+
+## Supplementary scripts
+
+These sit alongside the main test sequence. They produce the extra figures used in the dissertation; each reuses the same core modules but with slightly different initial conditions or diagnostics from the corresponding `testNN` script.
+
+| Script | Figure in report | What it shows |
+|--------|------------------|---------------|
+| `test01_longtime.py` | Fig 4.1 | Long-time gyromotion (~318 gyroperiods) with radial deviation and energy drift |
+| `test02_withdev.py` | Fig 4.2 | Helical motion with running-max deviation from the analytic `z(t) = v_∥ t` |
+| `test08_tolerance.py` | Fig 5.4 | Tolerance check (`rtol 1e-9` vs `1e-11`) on the GC dips at the M=50 mirror points |
+| `test08_gc_compare.py` | Fig 5.5 | Side-by-side M=50 vs M=500 full orbit / extracted GC / GC equations |
+| `test15_charge_compare.py` | Fig 5.13 | Corotation drift for q=+1 vs q=−1 (E×B charge-independent; gradient+curvature flips) |
+| `figure2_5_bounce_loss_cone.py` | Fig 2.1 | Pedagogical schematic: bounce trajectory, mirror points, loss cone |
+| `figure5_1_dipole_geometry.py` | Fig 5.1 | Redrawn dipole field-line geometry with L-shell labels |
 
 ---
 
